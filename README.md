@@ -10,9 +10,9 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 
 ## How a race works
 
-1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model in an Arena race.
-2. **Betting opens.** You open `/join` (the QR code at the venue points to it), pick a rider name and get 1,000 Credits. No account is needed, and a Google login is the second way in. You pick one horse per race and bet on it to Win, to Place, or both.
-3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of at least 60 seconds, so other players can get in. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
+1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. A player can add an OpenRouter model as a horse to each open race.
+2. **Betting opens.** You sign in with Google and get 1,000 Credits. You pick one horse per race and bet on it to Win, to Place, or both.
+3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of 10 minutes, so other players can get in. The races that are ready at the same time run at the same time. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
 4. **The race.** Each horse gets an identical copy of the room and 3 minutes. The screens show the progress of each horse from 0 to 100 and its cost in dollars, live. Betting stays open and the odds move with every bet.
 5. **The finish.** The winner is the horse that solves the challenge at the lowest cost, not the fastest. Betting closes when the first horse finishes. The other horses race on, because a later finisher can be cheaper. If no horse finishes in 3 minutes, the horse with the most progress wins.
 6. **The payout.** Winning bets are paid in Credits. The board shows the finish order, the changes the winner made in its room, and the leaderboard.
@@ -87,7 +87,7 @@ derby/
 
 ```mermaid
 flowchart LR
-  phone["Phone<br/>join and bet"]
+  phone["Phone<br/>sign in and bet"]
   board["Board<br/>big screen"]
   db[("Supabase<br/>Postgres, Realtime, Auth")]
   runner["Runner<br/>Node on Railway"]
@@ -109,7 +109,7 @@ flowchart LR
   runner -- "logs and final rooms" --> disk
 ```
 
-- **Frontend.** A Vite app on Vercel. `/` is the race list (Popular and Latest), `/race/:id` is one race with the bets and the odds chart, `/arena` is where you enter your own OpenRouter model in an Arena race, `/leaderboard` ranks the players, `/profile` is where you set your public name and build your pixel rider (hat, top, pants, skin and more), and `/board` is the big screen. It reads Supabase directly and gets every change through Realtime. On a local dev server, `/ops` shows an admin what the runner does: the disk, the base room, one fork per horse, each model step and each tool call.
+- **Frontend.** A Vite app on Vercel. `/` is the race list (Popular and Latest), `/race/:id` is one race with the bets and the odds chart, `/leaderboard` ranks the players, `/profile` is where you set your public name and build your pixel rider (hat, top, pants, skin and more), and `/board` is the big screen. It reads Supabase directly and gets every change through Realtime. On a local dev server, `/ops` shows an admin what the runner does: the disk, the base room, one fork per horse, each model step and each tool call.
 - **Runner.** A long-lived Node process on Railway. It owns the race: it forks the sandboxes, runs one agent loop per horse, checks the progress after every step and settles the bets. The models run outside the sandbox through OpenRouter. The runner executes their commands inside the fork.
 - **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet, a model entry and the payout each go through one Postgres function, so the Credits balances stay consistent.
 
@@ -201,7 +201,7 @@ node --test shared/src/finish.test.ts   # the finish order
 ## Project layout
 
 ```
-frontend/            the Vite app: race list, race page, Arena, leaderboard and the board
+frontend/            the Vite app: race list, race page, leaderboard and the board
 backend/src/         the race runner
 backend/supabase/    database config and migrations
 shared/              types, the odds maths, the finish order and the list of the rooms
@@ -211,4 +211,4 @@ The challenge pool (generators, checkers and answers) is private and is not in t
 
 ## Status
 
-Model Derby was built in one day at the hackathon, and it is live at https://www.modelderby.com. Races run with real models, and betting, payouts, guest accounts and the Arena work. The Google login is in test mode, so only test accounts can use it: join as a guest at `/join`.
+Model Derby was built in one day at the hackathon, and it is live at https://www.modelderby.com. Races run with real models, and betting and payouts work. The Google login is the only way in, and it is in test mode, so only test accounts can use it for now.
