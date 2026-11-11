@@ -11,6 +11,10 @@ export const RACE_MS = 180_000
 // The title and the one public line of each challenge, from the one list in shared/src/rooms.ts.
 export const ROOMS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { title }]) => [room, title]))
 export const BLURBS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { blurb }]) => [room, blurb]))
+// The tags of each challenge: its kind first, then the tools that a horse has in the room.
+export const TAGS: Record<string, string[]> = Object.fromEntries(
+  Object.entries(ALL).map(([room, { category, search }]) => [room, [category, 'bash', ...(search ? ['Keenable web search'] : [])]]),
+)
 
 // What a horse did or does, in a few words. A waiting horse has no state text.
 export const stateOf = (entry: Entry) =>

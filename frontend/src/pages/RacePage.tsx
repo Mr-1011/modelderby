@@ -44,7 +44,7 @@ export default function RacePage() {
   if (!view || session === undefined || (session && !player))
     return (
       <div role="status" aria-label="Loading" className="motion-safe:animate-load">
-        <div className="flex h-[192px] items-start gap-6 py-6 lg:h-[144px] lg:items-center">
+        <div className="flex h-[260px] items-start gap-6 py-6 lg:h-[177px] lg:items-center">
           <div className="size-16 shrink-0 bg-line lg:size-24" />
           <div className="min-w-0 grow">
             <div className="h-[30px] w-48 max-w-full bg-line lg:h-[45px] lg:w-72" />

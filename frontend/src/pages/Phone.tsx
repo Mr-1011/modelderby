@@ -8,7 +8,7 @@ import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
 import { useModels } from '../lib/queries'
-import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf } from '../lib/race'
+import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf, TAGS } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
@@ -123,6 +123,14 @@ export function PhoneView({
         <div className="min-w-0">
           <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
           <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+          {/* The kind of the challenge is the filled tag. The other tags are the tools of a horse. */}
+          <ul className="mt-3 flex flex-wrap gap-2 text-[12px] leading-5">
+            {TAGS[race.task]?.map((tag, i) => (
+              <li key={tag} className={`border-2 border-line px-2 ${i ? 'text-muted' : 'bg-line'}`}>
+                {tag}
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="col-span-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:col-span-1 lg:flex-col lg:items-end">
           <p className="text-accent">{winner ? `${status}, ${usd(winner.entry.cost_usd)}` : status}</p>
