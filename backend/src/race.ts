@@ -2,20 +2,24 @@
 import { randomBytes } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Sandbox } from 'disk'
+import { finishOrder } from '@horserace/shared'
 import type { Entry, Horse, Race } from '@horserace/shared'
-import { finishOrder } from './finish.ts'
 import { buildBase, disk, remove, removeLeftovers, runCheck } from './prepare.ts'
 
 const RACE_MS = 180_000
 const BUILD_MS = 20_000
+const CHECK_MS = 3000
 const MAX_STEPS = 40
 const OPEN_RACES = 3
 const MINUTE = 60_000
+// With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
+const ELIMINATE = ['1', 'true'].includes(process.env.LIVE_ELIMINATION ?? '')
 
-const PROMPT =
-  'You are locked in an escape room at /room. Read /room/README.txt. There are 5 locks; open as many as you can, ' +
-  'all 5 to escape. Locks are independent. Run /room/check.sh to see which locks are open. Use only shell commands ' +
-  'and file edits; there is no network. You have 3 minutes. Use the bash tool.'
+const prompt = (task: string) =>
+  `Your task is in ${task === 'vault' ? '/room/README.txt' : '/room/TASK.md'}. Solve it inside 3 minutes. ` +
+  'Of the models that solve it in time, the one with the lowest token cost wins, so use as few tokens as you can. ' +
+  'If no model solves it, the highest progress wins. Run /room/check.sh to see your progress. ' +
+  'Use only shell commands and file edits; there is no network. Use the bash tool.'
 
 const BASH_TOOL = {
   type: 'function',
@@ -84,16 +88,27 @@ async function allowedModels() {
   )
 }
 
-// One horse: the model sends bash commands, the runner runs them in the fork and checks the locks after each one.
+// Puts a checker result into the entry of a horse. A running horse at 100 has finished.
+// The finish is final: a later move in the room can lower the progress, but not for a finished horse.
+function record(lane: Lane, result: Awaited<ReturnType<typeof runCheck>>, ms: number) {
+  if (lane.state === 'escaped') return
+  if (result.progress > lane.progress) lane.last_lock_ms = ms
+  Object.assign(lane, result)
+  if (lane.progress === 100 && lane.state === 'running') {
+    lane.state = 'escaped'
+    lane.solved_ms = ms
+  }
+}
+
+// One horse: the model sends bash commands, the runner runs them in the fork and calls update after each one.
 async function ride(
   lane: Lane,
   fork: Sandbox,
-  check: string,
-  started: number,
+  task: string,
   signal: AbortSignal,
-  queue: (write: () => PromiseLike<unknown>) => void,
+  update: (command: string, output: string) => Promise<unknown>,
 ) {
-  const messages: unknown[] = [{ role: 'user', content: PROMPT }]
+  const messages: unknown[] = [{ role: 'user', content: prompt(task) }]
   // Three failed requests or answers without a command in a row end the race of this horse.
   let failures = 0
   while (lane.steps < MAX_STEPS && !signal.aborted) {
@@ -136,25 +151,10 @@ async function ride(
       if (signal.aborted) return
       if (output.length > 6000) output = `${output.slice(0, 3000)}\n[...]\n${output.slice(-3000)}`
       messages.push({ role: 'tool', tool_call_id: call.id, content: output })
-
-      const locks = await runCheck(fork, check).catch(() => lane.locks ?? '00000')
-      if (signal.aborted) return
-      const ms = Date.now() - started
-      const open = locks.split('1').length - 1
-      if (open > lane.locks_open) lane.last_lock_ms = ms
       lane.steps++
-      lane.locks = locks
-      lane.locks_open = open
       lane.last_step = command.replace(/\s+/g, ' ').slice(0, 120)
-      if (open === 5) {
-        lane.state = 'escaped'
-        lane.solved_ms = ms
-      }
-      const { horse: _, ...row } = lane
-      const line = JSON.stringify({ ms, step: lane.steps, command, output: output.slice(0, 4000), locks })
-      queue(() => patchEntry(lane.race_id, lane.horse_id, row))
-      queue(async () => (await disk()).appendObject(`races/${lane.race_id}/${lane.horse_id}/log.jsonl`, `${line}\n`))
-      if (open === 5) return
+      // The update stops this horse when it finished or went out.
+      await update(command, output)
     }
   }
 }
@@ -168,7 +168,7 @@ export async function runRace(race: Race) {
   const allowed = await allowedModels()
   const { base, check } = await buildBase(`derby-r${race.id}-base`, race.task, seed)
   // The room is ready before the countdown ends. The entries close at the countdown, so the lanes are read after it.
-  await sleep(Date.parse(race.countdown_ends_at!) - Date.now())
+  await sleep(Math.max(0, Date.parse(race.countdown_ends_at!) - Date.now()))
   const lanes = await lanesOf(race.id)
   const forks = new Map<string, Sandbox>()
   await Promise.all(
@@ -203,26 +203,56 @@ export async function runRace(race: Race) {
   const stop = new AbortController()
   const timer = setTimeout(() => stop.abort(), RACE_MS)
   const stopped = new Promise((resolve) => stop.signal.addEventListener('abort', resolve))
-  let escaped = 0
+  let finished = 0
+  let lowest = Infinity // the lowest cost of a horse that finished
+  // The race ends when each horse has finished, gone out or stopped, or at the time limit.
   await Promise.all(
-    running.map((lane) =>
+    running.map((lane) => {
+      const fork = forks.get(lane.horse_id)!
+      // Stops this horse only.
+      const own = new AbortController()
+      const signal = AbortSignal.any([stop.signal, own.signal])
+      // Runs the checker and writes the entry. The updates of one horse run one after the other.
+      let last: Promise<unknown> = Promise.resolve()
+      const update = (command?: string, output?: string) =>
+        (last = last
+          .then(async () => {
+            const result = await runCheck(fork, check).catch(() => null)
+            if (signal.aborted) return
+            const ms = Date.now() - started
+            if (result) record(lane, result, ms)
+            if (lane.state === 'escaped') {
+              lowest = Math.min(lowest, lane.cost_usd)
+              // Betting closes at the first finish. settle_race sets the winner, because the lowest cost wins.
+              if (++finished === 1) {
+                queue(() => must(db.from('races').update({ betting_closed_at: new Date().toISOString() }).eq('id', race.id)))
+              }
+            } else if (ELIMINATE && lane.cost_usd > lowest) lane.state = 'out'
+            if (lane.state !== 'running') own.abort()
+            const { horse: _, ...row } = lane
+            queue(() => patchEntry(race.id, lane.horse_id, row))
+            if (command === undefined) return
+            const line = JSON.stringify({ ms, step: lane.steps, command, output: output!.slice(0, 4000), progress: lane.progress, locks: lane.locks })
+            queue(async () => (await disk()).appendObject(`races/${race.id}/${lane.horse_id}/log.jsonl`, `${line}\n`))
+          })
+          .catch((error) => console.error(lane.horse_id, error)))
+      // A script of the agent can change the room without a new command, so the checker also runs on a timer.
+      void (async () => {
+        while (!signal.aborted) {
+          await sleep(CHECK_MS)
+          if (!signal.aborted) await update()
+        }
+      })()
       // A horse that waits for a slow command does not hold up the end of the race.
-      Promise.race([
+      return Promise.race([
         stopped,
-        ride(lane, forks.get(lane.horse_id)!, check, started, stop.signal, queue)
+        ride(lane, fork, race.task, signal, update)
           .catch((error) => console.error(lane.horse_id, error))
-          .then(() => {
-            if (lane.state !== 'escaped') return
-            if (++escaped === 1) {
-              queue(() =>
-                must(db.from('races').update({ betting_closed_at: new Date().toISOString(), winner_horse: lane.horse_id }).eq('id', race.id)),
-              )
-            }
-            if (escaped >= Math.min(placeCount, running.length)) stop.abort()
-          }),
-      ]),
-    ),
+          .finally(() => own.abort()),
+      ])
+    }),
   )
+  const ended = Math.min(Date.now() - started, RACE_MS)
   stop.abort()
   clearTimeout(timer)
   await writes
@@ -233,12 +263,11 @@ export async function runRace(race: Race) {
     running.map(async (lane) => {
       const fork = forks.get(lane.horse_id)!
       try {
-        const locks = await runCheck(fork, check)
-        const open = locks.split('1').length - 1
-        if (open > lane.locks_open) lane.last_lock_ms = RACE_MS
-        lane.locks = locks
-        lane.locks_open = open
-        lane.diff = (await fork.exec('git add -A && git diff --cached', { cwd: '/room', timeoutSeconds: 30 })).stdout
+        // The last look at the room: a horse can reach 100 after its last check.
+        record(lane, await runCheck(fork, check), ended)
+        // A room without a git repository gives the command log of its CLI as the diff.
+        const diff = '(git add -A && git diff --cached) 2>/dev/null || cat .cube/moves.log .robot/commands.log 2>/dev/null'
+        lane.diff = (await fork.exec(diff, { cwd: '/room', timeoutSeconds: 30 })).stdout
         const room = (await fork.exec('tar czf - -C / room | base64 -w0', { timeoutSeconds: 60 })).stdout
         const at = `races/${race.id}/${lane.horse_id}`
         await files.putObject(`${at}/final.diff`, lane.diff, 'text/plain')
@@ -246,7 +275,7 @@ export async function runRace(race: Race) {
       } catch (error) {
         console.error(lane.horse_id, error)
       }
-      if (lane.state !== 'escaped') lane.state = 'timeout'
+      if (lane.state === 'running') lane.state = 'timeout'
     }),
   )
   await finish(race.id, lanes)

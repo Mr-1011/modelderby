@@ -32,10 +32,18 @@ export async function buildBase(name: string, room: string, seed: string) {
   return { base, check: setup.stdout }
 }
 
-// The runner's own copy of the checker. Returns one character per lock, for example "11000".
+// The runner's own copy of the checker. A room checker prints "PROGRESS <0 to 100>" and optionally "VIEW <one line>".
+// The vault checker prints one line per lock instead, and each open lock is 20 points. Returns fields of an entry.
 export async function runCheck(sandbox: archil.Sandbox, check: string) {
-  const result = await sandbox.exec('bash -c "$CHECK"', { env: { CHECK: check, ROOM: '/room' }, timeoutSeconds: 30 })
-  return [1, 2, 3, 4, 5].map((n) => (result.stdout.includes(`lock${n} open`) ? '1' : '0')).join('')
+  const { stdout } = await sandbox.exec('bash -c "$CHECK"', { env: { CHECK: check, ROOM: '/room' }, timeoutSeconds: 30 })
+  const progress = stdout.match(/^PROGRESS (\d+)/m)?.[1]
+  if (progress) {
+    return { progress: Number(progress), view: stdout.match(/^VIEW (.*)/m)?.[1] ?? null, locks: null, locks_open: 0 }
+  }
+  if (!stdout.includes('lock1 ')) throw new Error('the checker gave no result')
+  const locks = [1, 2, 3, 4, 5].map((n) => (stdout.includes(`lock${n} open`) ? '1' : '0')).join('')
+  const open = locks.split('1').length - 1
+  return { progress: open * 20, view: null, locks, locks_open: open }
 }
 
 export async function remove(sandbox: archil.Sandbox) {
@@ -59,15 +67,17 @@ if (import.meta.main) {
   }
   console.log(`pushed pool/${room} to the disk ${d.name}`)
 
-  // The gate: a fresh room has 0 locks open, and the reference solution opens all 5.
+  // The gate: the progress of a fresh room is below 100, and the reference solution brings it to 100.
   const { base, check } = await buildBase(`derby-rtest-${room}-base`, room, 'test')
   const fork = await base.fork({ name: `derby-rtest-${room}-fork` })
-  console.log('fresh room:', await runCheck(fork, check))
+  const fresh = await runCheck(fork, check)
   const solve = await fork.exec('python3 -c "$SOLVE"', {
     env: { SOLVE: new TextDecoder().decode(await d.getObject(`rooms/${room}/solve.py`)) },
     timeoutSeconds: 120,
   })
-  console.log('after solve.py:', await runCheck(fork, check), solve.exitCode === 0 ? '' : solve.stderr)
+  const solved = await runCheck(fork, check)
+  console.log('fresh room:', fresh, 'after solve.py:', solved, solve.exitCode === 0 ? '' : solve.stderr)
+  if (fresh.progress >= 100 || solved.progress !== 100) process.exitCode = 1
   await remove(fork)
   await remove(base)
 }
