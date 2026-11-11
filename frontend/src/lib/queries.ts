@@ -138,7 +138,7 @@ export function useBoardRaceId() {
 }
 
 const ENTRY_COLUMNS =
-  'race_id, horse_id, sandbox_id, state, locks_open, locks, steps, last_step, cost_usd, tokens, solved_ms, last_lock_ms, finish_pos'
+  'race_id, horse_id, sandbox_id, state, progress, view, locks_open, locks, steps, last_step, cost_usd, tokens, solved_ms, last_lock_ms, finish_pos'
 
 export type LiveRace = RaceView & { bets: Bet[]; win: Stakes; place: Stakes }
 
