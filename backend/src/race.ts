@@ -1,4 +1,4 @@
-// The race loop: keeps races open, runs one race at a time, settles it.
+// The race loop: keeps one race open for each room, runs the ready races at the same time, settles them.
 import { randomBytes } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Sandbox } from 'disk'
@@ -350,6 +350,9 @@ async function finish(race: number, lanes: Lane[]) {
   await raceEvent(race, 'settled', { text: order[0] })()
 }
 
+// The races that this process runs now. A race stays open while its room is built, so the status does not show it.
+const active = new Set<number>()
+
 async function tick() {
   const open = (await must(db.from('races').select('*').eq('status', 'open'))) as Race[]
   // A room with the command `search` needs the key of the search service.
@@ -367,10 +370,19 @@ async function tick() {
   }
   // Only a ready race starts: the database sets ready at the first bet, the first model entry or an admin start.
   // The room build takes about 15 s, so it starts before the countdown ends.
-  const [due] = (await must(
-    db.from('races').select('*').eq('status', 'open').eq('ready', true).order('countdown_ends_at').limit(1),
+  const due = (await must(
+    db.from('races').select('*').eq('status', 'open').eq('ready', true).lte('countdown_ends_at', new Date(Date.now() + BUILD_MS).toISOString()),
   )) as Race[]
-  if (due && Date.parse(due.countdown_ends_at!) - BUILD_MS <= Date.now()) await runRace(due)
+  for (const race of due) {
+    if (active.has(race.id)) continue
+    active.add(race.id)
+    // No await: the races that are ready at the same time run at the same time.
+    // A race that failed stays in the set, so it does not start again in each tick. A restart releases it.
+    void runRace(race).then(
+      () => active.delete(race.id),
+      (error) => console.error(race.id, error),
+    )
+  }
 }
 
 // After a crash: free the sandboxes, release the races that never started, and settle a race that was running.
