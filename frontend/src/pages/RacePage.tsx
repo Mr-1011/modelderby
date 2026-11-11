@@ -67,10 +67,9 @@ export default function RacePage() {
   const mine = view.bets.filter((bet) => bet.player_id === session?.user.id)
   const staked = mine.reduce((sum, bet) => sum + bet.amount, 0)
   const paid = mine.reduce((sum, bet) => sum + (bet.payout ?? 0), 0)
-  // The same rules as the database: an open Arena race, a place is free, and this player has no horse in it.
+  // The same rules as the database: the race is open, a place is free, and this player has no horse in it.
   // A race that is not ready waits for its first player, so its countdown does not close the entries.
   const canAdd =
-    race.arena &&
     race.status === 'open' &&
     (!race.ready || Date.parse(race.countdown_ends_at ?? race.opens_at) > now) &&
     view.lanes.length < MAX_HORSES &&
