@@ -83,6 +83,15 @@ export default function Shell() {
       </header>
       <div className="mx-auto max-w-6xl px-4 pb-24 lg:pb-10">
         <Outlet />
+        {/* Google needs a link to the privacy policy on the home page. */}
+        <footer className="mt-10 flex gap-6 border-t-2 border-line pt-4 text-[13px] text-muted">
+          <Link to="/privacy" className="hover:text-accent">
+            Privacy
+          </Link>
+          <Link to="/terms" className="hover:text-accent">
+            Terms
+          </Link>
+        </footer>
       </div>
     </>
   )

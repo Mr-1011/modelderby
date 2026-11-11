@@ -3,6 +3,7 @@ import Shell from './components/Shell'
 import Admin from './pages/Admin'
 import Board from './pages/Board'
 import Home from './pages/Home'
+import { Privacy, Terms } from './pages/Legal'
 import Leaderboard from './pages/Leaderboard'
 import Ops from './pages/Ops'
 import Phone from './pages/Phone'
@@ -26,6 +27,8 @@ export default function App() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
       </Route>
       {/* An old link, for example /join of a QR code, goes to the race list. */}
       <Route path="*" element={<Navigate to="/" replace />} />
