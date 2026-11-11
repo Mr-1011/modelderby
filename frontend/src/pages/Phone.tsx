@@ -1,6 +1,6 @@
 import { finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
 import { type ReactNode, useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import Glyph from '../components/Glyph'
 import Horse from '../components/Horse'
 import RoomView from '../components/RoomView'
@@ -76,10 +76,12 @@ function BetSlip({
 // The page is open without an account: player is null then, and a tap on the odds leads to the sign-in page.
 // stakes are the Credits on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
 // chart draws the odds chart. It gets the horse that the page highlights, and a function to set it.
+// add is one more box after the horses: the free place where a player adds a horse.
 export function PhoneView({
-  view, player, bets, onBet, stakes, chart,
+  view, player, bets, onBet, stakes, chart, add,
 }: {
   view: RaceView
+  add?: ReactNode
   chart?: (active: string | null, onActive: (horse: string | null) => void) => ReactNode
   stakes?: { win: Stakes; place: Stakes }
   player: Player | null
@@ -224,11 +226,8 @@ export function PhoneView({
             </li>
           )
         })}
+        {add}
       </ol>
-
-      <Link to="/arena" className="mt-8 inline-block text-[15px] underline underline-offset-4">
-        Enter your own model
-      </Link>
 
       {player && slip && slipLane && open && (
         <BetSlip

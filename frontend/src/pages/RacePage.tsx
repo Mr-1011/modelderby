@@ -1,10 +1,36 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import OddsChart from '../components/OddsChart'
 import { oats } from '../lib/format'
-import { placeBet, useNow, usePlayer, useRace, useSession } from '../lib/queries'
+import { placeBet, useModels, useNow, usePlayer, useRace, useSession } from '../lib/queries'
+import { EntryForm, MAX_HORSES } from './Arena'
 import { PhoneView } from './Phone'
+
+// A free place in the lineup of an open race. A player adds one OpenRouter model as a horse, and each player can bet on it.
+function AddHorse({ race, signedIn }: { race: number; signedIn: boolean }) {
+  const { data: models } = useModels()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
+  if (open && models)
+    return (
+      <li className="col-span-full border-2 border-accent bg-panel p-3">
+        <EntryForm race={race} models={models} />
+      </li>
+    )
+  return (
+    <li className="min-w-0">
+      <button
+        onClick={() => (signedIn ? setOpen(true) : navigate('/signin', { state: { from: pathname } }))}
+        className="grid h-full min-h-40 w-full place-content-center justify-items-center gap-2 border-2 border-dashed border-line text-muted hover:border-text hover:text-text"
+      >
+        <span className="font-pixel text-[45px] leading-none">+</span>
+        <span className="font-pixel text-[22.5px] leading-none lg:text-[30px]">Add a horse</span>
+      </button>
+    </li>
+  )
+}
 
 // One race with live data: the race view with the odds chart on top, then the result.
 // The page is open without an account. Only a bet needs one.
@@ -24,11 +50,19 @@ export default function RacePage() {
   const mine = view.bets.filter((bet) => bet.player_id === session?.user.id)
   const staked = mine.reduce((sum, bet) => sum + bet.amount, 0)
   const paid = mine.reduce((sum, bet) => sum + (bet.payout ?? 0), 0)
+  // The same rules as the database: the race is open, a place is free, and this player has no horse in it.
+  // A race that is not ready waits for its first player, so its countdown does not close the entries.
+  const canAdd =
+    race.status === 'open' &&
+    (!race.ready || Date.parse(race.countdown_ends_at ?? race.opens_at) > now) &&
+    view.lanes.length < MAX_HORSES &&
+    !view.lanes.some((lane) => lane.horse.submitted_by === session?.user.id)
   return (
     <>
       <PhoneView
         view={view}
         stakes={view}
+        add={canAdd && <AddHorse race={id} signedIn={!!session} />}
         chart={(active, onActive) => (
           <OddsChart
             view={view}

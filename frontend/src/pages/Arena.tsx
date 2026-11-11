@@ -15,12 +15,13 @@ const SUGGESTED = [
   'google/gemini-3.5-flash-lite',
   'x-ai/grok-4.5',
 ]
-const MAX_HORSES = 8
+export const MAX_HORSES = 8
 
 const FIELD = 'h-12 w-full border-2 border-text bg-bg px-3 text-[16px] placeholder:text-muted'
 const OPTION = 'block w-full truncate border-b-2 border-line py-3 text-left text-[14px] aria-pressed:text-accent'
 
-function EntryForm({ race, models }: { race: number; models: Model[] }) {
+// The search for a model and the name of the new horse. The Arena and the race page both use it.
+export function EntryForm({ race, models }: { race: number; models: Model[] }) {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [model, setModel] = useState<Model>()
