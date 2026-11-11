@@ -33,7 +33,8 @@ export default function Horse({
 }: {
   id: string; scale: number; running?: boolean; idle?: boolean
 }) {
-  const beat = [...id].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 4001, 7)
+  // The product spreads ids that differ in one character, so two horses do not move at the same time.
+  const beat = (([...id].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 4001, 7) * 2654435761) >>> 0) % 4001
   return (
     <div
       aria-hidden
