@@ -109,8 +109,11 @@ export default function Arena() {
   const { data: models } = useModels()
   const now = useNow()
   const [entering, setEntering] = useState<number>()
+  // A race that is not ready waits for its first player, so its countdown does not close the entries.
   const open = data
-    ?.filter(({ race }) => race.status === 'open' && Date.parse(race.countdown_ends_at ?? race.opens_at) > now)
+    ?.filter(
+      ({ race }) => race.status === 'open' && (!race.ready || Date.parse(race.countdown_ends_at ?? race.opens_at) > now),
+    )
     .reverse()
   return (
     <main>
