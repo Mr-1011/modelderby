@@ -139,6 +139,31 @@ begin
   insert into public.admins (player_id) values (a2);
   perform public.start_race(v_race);
   assert (select ready and countdown_ends_at = now() + interval '20 seconds' from public.races where id = v_race), 'an admin starts a race';
+
+  -- A player sets the public name and the rider. A bad name or a bad rider fails.
+  perform set_config('request.jwt.claims', json_build_object('sub', a1)::text, true);
+  perform public.set_profile('  Ada Lovelace ', '{1,0,3,18,2,0,7}');
+  assert (select nickname = 'Ada Lovelace' and rider = '{1,0,3,18,2,0,7}' from public.players where id = a1), 'the profile is saved';
+  begin
+    perform public.set_profile(' ', '{1}');
+    assert false, 'an empty name must fail';
+  exception when raise_exception then null;
+  end;
+  begin
+    perform public.set_profile('Ada', '{1,-1}');
+    assert false, 'a negative number in the rider must fail';
+  exception when raise_exception then null;
+  end;
+  begin
+    perform public.set_profile('Ada', '{1,null}');
+    assert false, 'a null in the rider must fail';
+  exception when raise_exception then null;
+  end;
+  begin
+    perform public.set_profile('Ada', '{{1,2},{3,4}}');
+    assert false, 'a nested rider must fail';
+  exception when raise_exception then null;
+  end;
 end;
 $$;
 

@@ -4,6 +4,7 @@ export type Player = {
   id: string
   nickname: string
   credits: number // Oats balance
+  rider: number[] | null // one number per part of the rider, null = the player built no rider
 }
 
 export type Horse = {
