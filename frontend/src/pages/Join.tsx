@@ -1,9 +1,11 @@
 import { APP_NAME } from '@horserace/shared'
+import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
-import Horse from '../components/Horse'
+import Rider from '../components/Rider'
 import { grass } from '../components/Track'
-import { joinAsGuest, useSession } from '../lib/queries'
+import { joinAsGuest, setProfile, useSession } from '../lib/queries'
+import { PARTS } from '../lib/rider'
 
 // A rider name is one random first name and one random last name, so it is not the name of a real person.
 const FIRST = [
@@ -16,18 +18,25 @@ const LAST = [
 ]
 const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)]
 const randomName = () => `${pick(FIRST)} ${pick(LAST)}`
+const randomRider = () => PARTS.map((part) => Math.floor(Math.random() * part.count))
 
-// The page behind the QR codes: a guest account without Google. /join?race=7 sends the new player to race 7.
+const STEP = 'grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none'
+
+// The page behind the QR codes: a guest account without Google, with a rider name and a rider, as on the profile page.
+// /join?race=7 sends the new player to race 7.
 // The account lives only in this browser. A player who is signed in goes on at once.
 export default function Join() {
   const session = useSession()
   const race = useSearchParams()[0].get('race') ?? ''
   const to = /^\d+$/.test(race) ? `/race/${race}` : '/'
+  const client = useQueryClient()
   const [name, setName] = useState(randomName)
+  const [rider, setRider] = useState(randomRider)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  if (session) return <Navigate to={to} replace />
+  // A new guest stays here until the rider is saved.
+  if (session && !busy) return <Navigate to={to} replace />
   // The session still loads, so the form must not flash for a player who is signed in.
   if (session === undefined) return null
   return (
@@ -41,20 +50,19 @@ export default function Join() {
           event.preventDefault()
           setBusy(true)
           setError('')
-          // The session change sends the player on, so there is nothing to do after a success.
-          joinAsGuest(name.trim()).catch((failure: Error) => {
-            setError(failure.message)
-            setBusy(false)
-          })
+          joinAsGuest(name.trim())
+            .then(() => setProfile(name.trim(), rider))
+            .then(() => client.invalidateQueries({ queryKey: ['player'] }))
+            .catch((failure: Error) => setError(failure.message))
+            // With a session, the end of busy sends the player on.
+            .finally(() => setBusy(false))
         }}
       >
-        <div className="flex items-end justify-between px-4 pb-1 pt-5" style={grass(2)}>
-          <Horse id="h2" scale={2} idle />
-          <Horse id="h5" scale={2} idle />
-          <Horse id="h6" scale={2} idle />
+        <div className="grid place-items-center p-4" style={grass(6)}>
+          <Rider rider={rider} scale={6} />
         </div>
         <div className="p-6">
-          <h1 className="font-pixel text-[45px] leading-none">Pick your rider name</h1>
+          <h1 className="font-pixel text-[45px] leading-none">Build your rider</h1>
           <div className="mt-6 flex gap-2">
             <input
               aria-label="Rider name"
@@ -72,6 +80,27 @@ export default function Join() {
               Roll
             </button>
           </div>
+          {PARTS.map((part, i) => {
+            const step = (by: number) => setRider(rider.map((value, at) => (at === i ? (value + by + part.count) % part.count : value)))
+            return (
+              <div key={part.name} className="mt-2 flex items-center">
+                <button type="button" aria-label={`Previous ${part.name}`} onClick={() => step(-1)} className={STEP}>
+                  &lt;
+                </button>
+                <p className="grow text-center font-pixel text-[30px] leading-none">{part.name}</p>
+                <button type="button" aria-label={`Next ${part.name}`} onClick={() => step(1)} className={STEP}>
+                  &gt;
+                </button>
+              </div>
+            )
+          })}
+          <button
+            type="button"
+            onClick={() => setRider(randomRider())}
+            className="mt-2 h-10 w-full border-2 border-text font-pixel text-[30px] leading-none"
+          >
+            Randomize
+          </button>
           <button
             disabled={busy || !name.trim()}
             className="mt-4 h-12 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted"
