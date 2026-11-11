@@ -46,7 +46,7 @@ pnpm build   # type check only, there is no compile step
 
 The runner listens on `PORT` (default 8080). `GET /health` answers `{"ok":true}`.
 
-Run Supabase CLI commands from `backend/`. The hosted project is `horserace` (ref `kqpkcmcehcdipshlirzi`, region us-west-1), and `backend/.env` holds `SUPABASE_DB_PASSWORD` for the CLI. To apply new migrations:
+Run Supabase CLI commands from `backend/`. The hosted project is `modelderby` (ref `kqpkcmcehcdipshlirzi`, region us-west-1), and `backend/.env` holds `SUPABASE_DB_PASSWORD` for the CLI. To apply new migrations:
 
 ```
 export SUPABASE_DB_PASSWORD=$(grep '^SUPABASE_DB_PASSWORD=' .env | cut -d= -f2)
@@ -121,7 +121,7 @@ Rules that hold across files:
 - The spec puts `endpoint_url` in `horses`. Here it is in `horse_secrets`, and `api_key` is optional, so no client can read the endpoint of a submitted horse.
 - `shared/src/types.ts` is handwritten. Update it when the schema changes.
 - Node runs the backend `.ts` files directly, and `shared` is imported as source. So `backend/` and `shared/` can use only erasable TypeScript syntax (no enums, no parameter properties), and a relative import needs the `.ts` extension.
-- The public name is Model Derby (decided on 2026-11-10, before it was Agent Derby). It is `APP_NAME` in `shared/src/index.ts`, and the static tags in `frontend/index.html` also hold it, because a link preview does not run JavaScript. Do not hardcode the name in another place. The GitHub repo (`Mr-1011/modelderby`) and the Vercel and Railway projects are named `modelderby`. `horserace` is only the name of the packages, the Supabase project and the Google Cloud project. Never show it to a user.
+- The public name is Model Derby (decided on 2026-11-10, before it was Agent Derby). It is `APP_NAME` in `shared/src/index.ts`, and the static tags in `frontend/index.html` also hold it, because a link preview does not run JavaScript. Do not hardcode the name in another place. The GitHub repo (`Mr-1011/modelderby`) and the Vercel and Railway projects are named `modelderby`. The packages (`@modelderby/shared`, `modelderby-backend`, `modelderby-frontend`), the Supabase project and the Google Cloud project ("Model Derby") have the name too since 2026-11-11. Only three things keep the old name `horserace`, because they cannot change: the ID of the Google Cloud project (`horserace-514403`), the Vercel alias `horserace-snowy.vercel.app` and the local folder of the repo. Never show `horserace` to a user.
 - The play money is "Credits" on every screen and in every document, and the database column is `players.credits`. Its name was "Oats" until 2026-11-10: never write "Oats". Only the helper `oats()` in `frontend/src/lib/format.ts` keeps the old name, and it formats an amount of Credits.
 - All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
 - Odds are pari-mutuel and are computed on read from `bets` with the maths in `shared/src/odds.ts`: all stakes of a market are one pool, so the odds of a horse fall when more Credits are on it. `open_race` and `enter_model` add a house seed of `horses.seed_weight` x 100 Credits per market (bets with `player_id` null), so each horse has odds before the first bet and a strong model starts as the favorite. The view `bet_totals` has the stakes per horse. The odds chart is computed from `bets` too (`winChanceHistory`), so nothing writes `odds_snapshots`.
