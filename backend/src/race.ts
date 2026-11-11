@@ -10,8 +10,7 @@ const RACE_MS = 180_000
 const BUILD_MS = 20_000
 const CHECK_MS = 3000
 const MAX_STEPS = 40
-const OPEN_RACES = 3
-// One more open race is an Arena race: only that race takes the models of players.
+// The open Arena races. Each room also has one open house race.
 const ARENA_RACES = 1
 const MINUTE = 60_000
 // With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
@@ -355,24 +354,24 @@ async function tick() {
   const open = (await must(db.from('races').select('*').eq('status', 'open'))) as Race[]
   // The countdown of a race that waits for its first player can be in the past, so a new race counts from now.
   let latest = Math.max(0, ...open.map((race) => Date.parse(race.countdown_ends_at!)))
-  // The house races and the Arena races are counted apart, so each kind always has its open races.
-  const missing = [false, true].flatMap((arena) =>
-    Array<boolean>(Math.max(0, (arena ? ARENA_RACES : OPEN_RACES) - open.filter((race) => race.arena === arena).length)).fill(arena),
-  )
-  if (missing.length) {
-    // A new race takes the next room after the room of the newest race, from the rooms that are on the disk.
+  const openRace = async (task: string, arena: boolean) => {
+    latest = Math.max(Date.now(), latest) + 6 * MINUTE
+    await must(db.rpc('open_race', { p_task: task, p_countdown_ends_at: new Date(latest).toISOString(), p_arena: arena }))
+  }
+  // A room with the command `search` needs the key of the search service.
+  const wanted = Object.keys(ROOMS).filter((room) => !ROOMS[room].search || process.env.KEENABLE_API_KEY)
+  // Each room has one open house race, so the race list shows each challenge. The Arena races are counted apart.
+  const house = (room: string) => open.some((race) => !race.arena && race.task === room)
+  const arenas = ARENA_RACES - open.filter((race) => race.arena).length
+  if (arenas > 0 || !wanted.every(house)) {
+    // A race opens only for a room that is on the disk.
     const { commonPrefixes } = await (await disk()).listObjects('rooms/')
-    // A room with the command `search` needs the key of the search service.
-    const rooms = Object.keys(ROOMS).filter(
-      (room) => commonPrefixes?.includes(`rooms/${room}/`) && (!ROOMS[room].search || process.env.KEENABLE_API_KEY),
-    )
+    const rooms = wanted.filter((room) => commonPrefixes?.includes(`rooms/${room}/`))
+    for (const room of rooms) if (!house(room)) await openRace(room, false)
+    // An Arena race takes the next room after the room of the newest race.
     const [newest] = (await must(db.from('races').select('task').order('id', { ascending: false }).limit(1))) as Race[]
     let task = newest?.task
-    for (const arena of missing) {
-      latest = Math.max(Date.now(), latest) + 6 * MINUTE
-      task = rooms[(rooms.indexOf(task) + 1) % rooms.length]
-      await must(db.rpc('open_race', { p_task: task, p_countdown_ends_at: new Date(latest).toISOString(), p_arena: arena }))
-    }
+    for (let n = 0; n < arenas; n++) await openRace((task = rooms[(rooms.indexOf(task) + 1) % rooms.length]), true)
   }
   // Only a ready race starts: the database sets ready at the first bet, the first model entry or an admin start.
   // The room build takes about 15 s, so it starts before the countdown ends.
