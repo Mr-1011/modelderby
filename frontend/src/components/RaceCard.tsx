@@ -8,7 +8,7 @@ import Glyph from './Glyph'
 // The place of a race card while the list loads. It has the height of a card, so the page does not move.
 export function RaceCardSkeleton() {
   return (
-    <li aria-hidden className="h-[462px] border-2 border-line bg-panel motion-safe:animate-load">
+    <li aria-hidden className="h-[482px] border-2 border-line bg-panel motion-safe:animate-load xl:h-[462px]">
       <div className="h-[210px] border-b-2 border-line bg-bg" />
       <div className="p-4">
         <div className="h-[30px] w-1/2 bg-line" />
@@ -37,10 +37,13 @@ export default function RaceCard({ summary, now, children }: { summary: RaceSumm
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="truncate font-pixel text-[30px] leading-none">{ROOMS[race.task] ?? race.task}</h2>
             <p className="shrink-0 text-[13px] text-muted">
-              Race {race.id}, {horses.length} horses
+              Race {race.id}
+              {/* Next to the number, a narrow card has no room for the count: the title must not be cut. */}
+              <span className="hidden lg:inline">, {horses.length} horses</span>
             </p>
           </div>
-          <p className="mt-2 line-clamp-2 h-10 text-[13px] leading-5 text-muted">{BLURBS[race.task]}</p>
+          {/* The line is never cut. It has room for 3 lines, and for 2 lines on a wide card. */}
+          <p className="mt-2 min-h-[60px] text-[13px] leading-5 text-muted xl:min-h-10">{BLURBS[race.task]}</p>
           {/* Each horse has odds from the house seed, so a race with no bet of a player shows its favorite, not an empty pool. */}
           <div className="mt-4 border-y-2 border-line py-3">
             <p className="text-[12px] text-muted">{settled ? 'Winner' : 'Favorite'}</p>
@@ -49,7 +52,7 @@ export default function RaceCard({ summary, now, children }: { summary: RaceSumm
               {!settled && favoriteOdds > 0 && <span className="shrink-0">{odds(favoriteOdds)}</span>}
             </p>
           </div>
-          <p className="mt-3 flex items-baseline justify-between gap-3 font-pixel text-[30px] leading-none">
+          <p className="mt-3 flex h-[30px] items-baseline justify-between gap-3 font-pixel text-[22.5px] leading-none lg:text-[30px]">
             <span className={`flex min-w-0 items-center gap-2 ${settled ? 'text-muted' : 'text-accent'}`}>
               {race.status === 'running' && <i className="size-3 shrink-0 bg-accent motion-safe:animate-blink" />}
               <span className="truncate">{statusOf(race, now)}</span>
