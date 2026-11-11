@@ -114,13 +114,16 @@ export function PhoneView({
 
   return (
     <main>
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 py-6">
-        <Glyph name={race.task} px={px} />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
-          <p className="mt-2 text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+      {/* On a wide screen the status is on the line of the title. On a phone it has its own row. */}
+      <div className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 py-6 lg:grid-cols-[auto_1fr_auto] lg:items-baseline">
+        <div className="lg:self-center">
+          <Glyph name={race.task} px={px} />
         </div>
-        <div className="flex w-full flex-wrap items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:w-auto lg:flex-col lg:items-end">
+        <div className="min-w-0">
+          <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
+          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+        </div>
+        <div className="col-span-2 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:col-span-1 lg:flex-col lg:items-end">
           <p className="text-accent">{winner ? `${status}, ${usd(winner.entry.cost_usd)}` : status}</p>
           <p className="text-muted">
             {race.status === 'running' && best ? (

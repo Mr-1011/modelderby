@@ -17,13 +17,16 @@ export default function FeaturedRace({ id, now }: { id: number; now: number }) {
   const status = statusOf(race, now, winner?.horse.name)
   return (
     <Link to={`/race/${id}`} className="mt-4 block border-2 border-accent bg-panel">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 p-4 lg:p-6">
-        <Glyph name={race.task} px={wide ? 4 : 2} />
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate font-pixel text-[30px] leading-none lg:text-[60px]">{ROOMS[race.task] ?? race.task}</h2>
-          <p className="mt-2 text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+      {/* On a wide screen the status is on the line of the title. On a phone it has its own row. */}
+      <div className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 p-4 lg:grid-cols-[auto_1fr_auto] lg:items-baseline lg:p-6">
+        <div className="lg:self-center">
+          <Glyph name={race.task} px={wide ? 4 : 2} />
         </div>
-        <p className="w-full font-pixel text-[30px] leading-none text-accent lg:w-auto lg:text-[45px]">
+        <div className="min-w-0">
+          <h2 className="truncate font-pixel text-[30px] leading-none lg:text-[60px]">{ROOMS[race.task] ?? race.task}</h2>
+          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+        </div>
+        <p className="col-span-2 font-pixel text-[30px] leading-none text-accent lg:col-span-1">
           {winner ? `${status}, ${usd(winner.entry.cost_usd)}` : status}
         </p>
       </div>
