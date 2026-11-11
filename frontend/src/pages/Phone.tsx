@@ -1,4 +1,4 @@
-import { type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
+import { finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
 import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Glyph from '../components/Glyph'
@@ -102,6 +102,8 @@ export function PhoneView({
   const open = race.status !== 'settled' && !race.betting_closed_at
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
   const status = statusOf(race, now, winner?.horse.name)
+  // The cheapest horse that has finished. A horse that still runs must stay below its cost to win.
+  const best = lanes.find((lane) => lane.horse.id === finishOrder(lanes.map((each) => each.entry))[0] && lane.entry.state === 'escaped')
   const slipLane = slip && lanes.find((lane) => lane.horse.id === slip.horse)
   // A player bets on one horse per race.
   const mine = bets[0]?.horse
@@ -116,10 +118,14 @@ export function PhoneView({
           <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
           <p className="mt-2 text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
         </div>
-        <div className="flex w-full items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:w-auto lg:flex-col lg:items-end">
-          <p className="text-accent">{status}</p>
+        <div className="flex w-full flex-wrap items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:w-auto lg:flex-col lg:items-end">
+          <p className="text-accent">{winner ? `${status}, ${usd(winner.entry.cost_usd)}` : status}</p>
           <p className="text-muted">
-            {race.status === 'running' && !open ? 'Bets closed' : <>Pool <span className="text-text">{oats(view.pool)}</span></>}
+            {race.status === 'running' && best ? (
+              <>Bets closed, <span className="text-text">{usd(best.entry.cost_usd)}</span> to beat</>
+            ) : (
+              view.pool > 0 && <>Pool <span className="text-text">{oats(view.pool)}</span></>
+            )}
           </p>
         </div>
       </div>
