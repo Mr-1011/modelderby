@@ -74,4 +74,5 @@ export type Bet = {
   outcome: string // horse id
   amount: number
   created_at: string
+  payout: number | null // null until the race is settled, 0 = lost
 }
