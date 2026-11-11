@@ -72,6 +72,12 @@ export async function setProfile(nickname: string, rider: number[]) {
   if (error) throw new Error(error.message)
 }
 
+// A message from the support page. A signed-in player sends no email, because the account has one.
+export async function sendSupport(message: string, email?: string) {
+  const { error } = await supabase.rpc('send_support', { p_message: message, p_email: email })
+  if (error) throw new Error(error.message)
+}
+
 export type Standing = Player & { invested: number }
 
 // The 10 players with the most Credits. invested is the Credits of a player in bets on races that are not settled.

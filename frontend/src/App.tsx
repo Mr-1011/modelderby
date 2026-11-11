@@ -10,6 +10,7 @@ import Phone from './pages/Phone'
 import Profile from './pages/Profile'
 import RacePage from './pages/RacePage'
 import SignIn from './pages/SignIn'
+import Support from './pages/Support'
 
 export default function App() {
   const { pathname, search } = useLocation()
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/support" element={<Support />} />
       </Route>
       {/* An old link, for example /join of a QR code, goes to the race list. */}
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
--- Checks the new-user trigger, open_race, enter_model, place_bet, settle_race and start_race.
+-- Checks the new-user trigger, open_race, enter_model, place_bet, settle_race, start_race, set_profile and send_support.
 -- It runs in one transaction and ends with ROLLBACK, so it leaves no data. Run from backend/:
 --   PGPASSWORD=$SUPABASE_DB_PASSWORD psql "host=aws-1-us-west-1.pooler.supabase.com port=5432 user=postgres.kqpkcmcehcdipshlirzi dbname=postgres sslmode=require" -v ON_ERROR_STOP=1 -f supabase/test_bets.sql
 begin;
@@ -162,6 +162,25 @@ begin
   begin
     perform public.set_profile('Ada', '{{1,2},{3,4}}');
     assert false, 'a nested rider must fail';
+  exception when raise_exception then null;
+  end;
+
+  -- Support: a player sends only the text, and the email of the account goes with it. A visitor needs a valid email.
+  update auth.users set email = 'ada@example.com' where id = a1;
+  perform set_config('request.jwt.claims', json_build_object('sub', a1)::text, true);
+  perform public.send_support('  Hello  ');
+  assert (select player_id = a1 and email = 'ada@example.com' and message = 'Hello' from public.support_messages order by id desc limit 1), 'a player message';
+  perform set_config('request.jwt.claims', '{}', true);
+  perform public.send_support('Hi', 'bo@example.com');
+  assert (select player_id is null and email = 'bo@example.com' from public.support_messages order by id desc limit 1), 'a visitor message';
+  begin
+    perform public.send_support('Hi', 'not an email');
+    assert false, 'a visitor without a valid email must fail';
+  exception when raise_exception then null;
+  end;
+  begin
+    perform public.send_support('   ');
+    assert false, 'an empty message must fail';
   exception when raise_exception then null;
   end;
 end;
