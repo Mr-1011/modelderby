@@ -65,12 +65,27 @@ export function usePlayer() {
   })
 }
 
+export type Standing = Player & { invested: number }
+
+// The 10 players with the most Oats. invested is the Oats of a player in bets on races that are not settled.
 export function useLeaderboard() {
   return useQuery({
     queryKey: ['leaderboard'],
     refetchInterval: 10_000,
-    queryFn: () =>
-      get<Player[]>(supabase.from('players').select('*').order('credits', { ascending: false }).limit(20)),
+    queryFn: async (): Promise<Standing[]> => {
+      const players = await get<Player[]>(
+        supabase.from('players').select('*').order('credits', { ascending: false }).limit(10),
+      )
+      // shortcut: PostgREST returns at most 1000 rows, so invested is too low if these 10 players have more than
+      // 1000 open bets. Sum in a view if that happens.
+      const open = await get<Pick<Bet, 'player_id' | 'amount'>[]>(
+        supabase.from('bets').select('player_id, amount').is('payout', null).in('player_id', players.map((player) => player.id)),
+      )
+      return players.map((player) => ({
+        ...player,
+        invested: open.filter((bet) => bet.player_id === player.id).reduce((sum, bet) => sum + bet.amount, 0),
+      }))
+    },
   })
 }
 
