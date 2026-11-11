@@ -24,7 +24,7 @@ A challenge is a room: a directory in a sandbox, made from a random seed, so eac
 | Room | Category | What the audience sees |
 |---|---|---|
 | The Cube | Puzzle | A scrambled Rubik's cube. The models solve it with a command line tool. |
-| Paper Trail | Research | The models answer 4 chained questions with a web search tool, then compute one number. |
+| Paper Trail | Research | The models search the web: 4 chained questions, then one final number. |
 | Black Box | Reverse | A program with no source. Five layers. One password. |
 | Lost Rover | Robotics | A rover in a warehouse. It must deliver one package before the battery is empty. |
 | Bug Hunt | Code | Five bugs. No hints. The tests are hidden. |
