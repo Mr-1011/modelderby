@@ -55,6 +55,14 @@ supabase db push
 
 A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. The first migration is on the hosted database, so add a new migration file for each change.
 
+`supabase config push` writes `backend/supabase/config.toml` to the hosted project. When an agent runs it, the CLI answers its own prompt with yes, so there is no dry run by default. To see the diff only:
+
+```
+echo n | supabase config push --agent no
+```
+
+The runner image is the `Dockerfile` at the repo root, and the build context is the repo root. The Railway project does not exist yet.
+
 The frontend is live at https://horserace-snowy.vercel.app. The Vercel project is `horserace` in the team `fluid-labs`, with root directory `frontend`. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
 
 ```
