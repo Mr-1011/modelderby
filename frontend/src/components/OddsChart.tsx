@@ -5,8 +5,9 @@ import type { LiveRace } from '../lib/queries'
 import { colorOf } from '../lib/sprite'
 
 // The chart is drawn at the size of its place on the page, so its text has the same size on each screen.
+// On a wide screen the chart has two thirds of the width, and the names of the horses are on its right.
 const WIDE = window.innerWidth >= 1024
-const W = WIDE ? 1120 : 448
+const W = WIDE ? 736 : 448
 const H = WIDE ? 240 : 200
 const AXIS = 34
 
@@ -37,11 +38,11 @@ export default function OddsChart({
   const dim = (horse: string) => (active && active !== horse ? 0.4 : 1)
 
   return (
-    <figure>
-      <h2 className="mb-3 font-pixel text-[30px] leading-none">Chance to win</h2>
+    <figure className="lg:grid lg:grid-cols-3 lg:gap-x-8">
+      <h2 className="mb-3 font-pixel text-[30px] leading-none lg:col-span-3">Chance to win</h2>
       <svg
         viewBox={`0 0 ${W} ${H}`}
-        className="w-full touch-none"
+        className="w-full touch-none lg:col-span-2"
         // The lines have only horizontal and vertical parts, so they can be as sharp as the pixel art.
         shapeRendering="crispEdges"
         role="img"
@@ -80,7 +81,7 @@ export default function OddsChart({
         })}
       </svg>
       <figcaption>
-        <ul className="mt-3 grid grid-cols-2 gap-x-6 text-[13px] lg:grid-cols-4 lg:text-[14px]">
+        <ul className="mt-3 grid grid-cols-2 gap-x-6 text-[13px] lg:mt-0 lg:grid-cols-1 lg:text-[14px]">
           {horses.map((horse) => (
             <li key={horse.id} className="flex items-center gap-2 py-1" style={{ opacity: dim(horse.id) }} {...pick(horse.id)}>
               <i className="size-3 shrink-0" style={{ background: colorOf(horse.id).color }} />
