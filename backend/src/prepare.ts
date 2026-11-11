@@ -3,6 +3,7 @@
 //   node --env-file=.env src/prepare.ts vault
 import { readFile } from 'node:fs/promises'
 import * as archil from 'disk'
+import { ROOMS } from '@horserace/shared'
 
 let derby: Promise<archil.Disk> | undefined
 
@@ -13,15 +14,31 @@ export function disk() {
   })())
 }
 
+// A room has no network. Only a room with the command `search` reaches one host, the search service.
+// Archil adds the key to each request outside the sandbox, so the key is never in a room. A fork keeps these rules.
+const network = (room: string) => ({
+  egress: {
+    default: 'deny' as const,
+    allow: ROOMS[room]?.search
+      ? [{ target: 'api.keenable.ai', transform: { headers: { 'X-API-Key': process.env.KEENABLE_API_KEY! } } }]
+      : [],
+  },
+})
+
 // Builds the room of one race in a new sandbox and stops it, so each horse can get a fork of it.
 // Returns the checker of this seed. The generator and the seed do not stay in the sandbox.
+// The checker is /room/check.sh. A room whose checker holds data that a horse must not see writes the real one
+// as runner-check.sh next to setup.py: that file goes only to the runner, and /room/check.sh is a public version.
+// Each room becomes a git repository, so the final diff of a horse works for every room.
 export async function buildBase(name: string, room: string, seed: string) {
   const d = await disk()
   const text = async (file: string) => new TextDecoder().decode(await d.getObject(`rooms/${room}/${file}`))
-  const base = await archil.createSandbox({ name, baseImage: 'python:3.13', vcpuCount: 1, memSizeMiB: 2048 })
+  const base = await archil.createSandbox({ name, baseImage: 'python:3.13', vcpuCount: 1, memSizeMiB: 2048, network: network(room) })
   const setup = await base.exec(
     'mkdir -p /opt/room-src && cd /opt/room-src && printf %s "$SETUP" > setup.py && printf %s "$CHECK" > check.sh' +
-      ` && python3 setup.py --seed ${seed} >&2 && rm -rf /opt/room-src && cat /room/check.sh`,
+      ` && python3 setup.py --seed ${seed} >&2 && (cat runner-check.sh 2>/dev/null || cat /room/check.sh)` +
+      ' && cd /room && rm -rf /opt/room-src && { [ -d .git ] || { git init -q && git add -A &&' +
+      ' git -c user.name=room -c user.email=room@example.com commit -qm room; }; } >&2',
     { env: { SETUP: await text('setup.py'), CHECK: await text('check.sh') }, timeoutSeconds: 120 },
   )
   if (setup.exitCode !== 0) {

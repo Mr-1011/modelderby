@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Sandbox } from 'disk'
-import { finishOrder } from '@horserace/shared'
+import { finishOrder, ROOMS } from '@horserace/shared'
 import type { Entry, Horse, Race } from '@horserace/shared'
 import { buildBase, disk, remove, removeLeftovers, runCheck } from './prepare.ts'
 
@@ -13,14 +13,13 @@ const MAX_STEPS = 40
 const OPEN_RACES = 3
 // One more open race is an Arena race: only that race takes the models of players.
 const ARENA_RACES = 1
-const ROOMS = ['cube', 'rover', 'vault'] // the order of the rooms for new races
 const MINUTE = 60_000
 // With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
 const ELIMINATE = ['1', 'true'].includes(process.env.LIVE_ELIMINATION ?? '')
 
 // The prompt is neutral: it does not tell the horse how the race is scored.
-const prompt = (task: string) =>
-  `Your task is in ${task === 'vault' ? '/room/README.txt' : '/room/TASK.md'}. Solve it with shell commands: use the bash tool. ` +
+const PROMPT =
+  'Your task is in /room/TASK.md. Solve it with shell commands: use the bash tool. ' +
   'Run /room/check.sh to see your progress. You have 3 minutes.'
 
 const BASH_TOOL = {
@@ -120,12 +119,11 @@ function record(lane: Lane, result: Awaited<ReturnType<typeof runCheck>>, ms: nu
 async function ride(
   lane: Lane,
   fork: Sandbox,
-  task: string,
   signal: AbortSignal,
   update: (command: string, output: string) => Promise<unknown>,
   event: (kind: string, fields: EventFields) => void,
 ) {
-  const messages: unknown[] = [{ role: 'user', content: prompt(task) }]
+  const messages: unknown[] = [{ role: 'user', content: PROMPT }]
   // Three failed requests or answers without a command in a row end the race of this horse.
   let failures = 0
   while (lane.steps < MAX_STEPS && !signal.aborted) {
@@ -293,7 +291,7 @@ export async function runRace(race: Race) {
       // A horse that waits for a slow command does not hold up the end of the race.
       return Promise.race([
         stopped,
-        ride(lane, fork, race.task, signal, update, event)
+        ride(lane, fork, signal, update, event)
           .catch((error) => console.error(lane.horse_id, error))
           .finally(() => own.abort()),
       ])
@@ -314,8 +312,7 @@ export async function runRace(race: Race) {
         // The last look at the room: a horse can reach 100 after its last check.
         record(lane, await runCheck(fork, check), end)
         if (lane.progress > before.progress) event('checkpoint', { horse_id: lane.horse_id, text: String(lane.progress) })
-        // A room without a git repository gives the command log of its CLI as the diff.
-        const diff = '(git add -A && git diff --cached) 2>/dev/null || cat .cube/moves.log .robot/commands.log 2>/dev/null'
+        const diff = 'git add -A && git diff --cached'
         lane.diff = (await fork.exec(diff, { cwd: '/room', timeoutSeconds: 30 })).stdout
         const room = (await fork.exec('tar czf - -C / room | base64 -w0', { timeoutSeconds: 60 })).stdout
         const at = `races/${race.id}/${lane.horse_id}`
@@ -365,7 +362,10 @@ async function tick() {
   if (missing.length) {
     // A new race takes the next room after the room of the newest race, from the rooms that are on the disk.
     const { commonPrefixes } = await (await disk()).listObjects('rooms/')
-    const rooms = ROOMS.filter((room) => commonPrefixes?.includes(`rooms/${room}/`))
+    // A room with the command `search` needs the key of the search service.
+    const rooms = Object.keys(ROOMS).filter(
+      (room) => commonPrefixes?.includes(`rooms/${room}/`) && (!ROOMS[room].search || process.env.KEENABLE_API_KEY),
+    )
     const [newest] = (await must(db.from('races').select('task').order('id', { ascending: false }).limit(1))) as Race[]
     let task = newest?.task
     for (const arena of missing) {
