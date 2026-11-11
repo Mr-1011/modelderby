@@ -119,11 +119,13 @@ Login must not redirect through Supabase. Do not use `supabase.auth.signInWithOA
 
 The design direction is from Furkan (2026-11-10) and replaces the "no race track" rule of the spec: a fairground derby game in pixel art, angular and technical, with orange as the one brand color.
 
-- All colors and fonts are theme tokens in the `@theme` block of `frontend/src/index.css`. Do not hardcode them in a component. The one exception is the pixel art in `frontend/src/lib/sprite.ts`.
-- The derby track is the main element: one orange lane per horse (`components/Track.tsx`), and the horse jumps one step for each open lock. There is exactly one chart: a line chart of the Win odds over time.
-- A horse always stands on the orange `bg-accent`. Text on orange is black (`text-on-accent`), never white. `components/Horse.tsx` draws the horse from its id, so the same horse looks the same on every screen and each horse differs in breed, mane, tail and silks.
+- All colors and fonts are theme tokens in the `@theme` block of `frontend/src/index.css`. Do not hardcode them in a component. The one exception is the pixel art in `frontend/src/lib/sprite.ts` (the horses and the meadow).
+- The derby track is the main element: a green pixel meadow with a white fence, like a fairground derby game (`components/Track.tsx`). Each horse has a lane and jumps one step for each open lock. A horse is higher than its lane, so the horses overlap. There is exactly one chart: a line chart of the Win odds over time.
+- A horse always stands on the meadow (`grass()` in `components/Track.tsx`), never on the black background, because its outline is black. Orange is for outlines, active states and the main button. Text on orange is black (`text-on-accent`), never white. `components/Horse.tsx` draws the horse from its id, so the same horse looks the same on every screen and each horse differs in breed, mane, tail and silks.
 - No rounded corners, no shadows, no gradients, no pill badges, no tilted images, nothing cropped. Borders are 2 px or 4 px. Use `font-pixel` for names, numbers and buttons, and the mono body font for the rest.
 - Few labels: a screen must explain itself without tags. Put a column label once in a header, not in every row.
 - Padding is at least 24 px on the board and 16 px on the phone. The board is drawn at 1920x1080 and scaled to the screen (`pages/Board.tsx`).
+- The race page shows the track only when the race has started. Before the start, the horses wait in boxes (3 to 4 in a row on a wide screen) with the model, the provider, the token price and the odds. A player bets on one horse per race.
+- A race in a list is a box with an orange outline and the pixel image of its challenge (`components/Glyph.tsx`). A challenge without a drawn image gets a generated one from its name.
 - `/board?demo` and `/?demo` run a fake race from `lib/demo.ts` for design work. Never show it without the `demo` parameter.
 - Before and during a race, show a lock only as its category and its blurb.
