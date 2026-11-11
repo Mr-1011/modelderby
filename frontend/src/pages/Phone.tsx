@@ -1,5 +1,5 @@
 import { APP_NAME, type Horse as HorseRow } from '@horserace/shared'
-import { type FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Horse from '../components/Horse'
 import Track from '../components/Track'
@@ -14,12 +14,8 @@ export type MyBet = { horse: string; market: Market; amount: number }
 const BUTTON = 'h-14 border-2 border-text font-pixel text-[28px] leading-none disabled:border-line disabled:text-muted'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
 
+// Login is Google only. The page that owns the session starts the sign-in, and a new player gets 1,000 Oats.
 function Join({ onJoin }: { onJoin: (nickname: string) => void }) {
-  const [name, setName] = useState('')
-  const submit = (event: FormEvent) => {
-    event.preventDefault()
-    if (name.trim()) onJoin(name.trim())
-  }
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
       <h1 className="font-pixel text-[64px] leading-none">{APP_NAME}</h1>
@@ -31,22 +27,10 @@ function Join({ onJoin }: { onJoin: (nickname: string) => void }) {
       <p className="mt-6 text-[17px] leading-relaxed">
         AI models race through an escape room. You bet on them with Oats. Oats are free and are not real money.
       </p>
-      <form onSubmit={submit} className="mt-8">
-        <label htmlFor="name" className="text-[14px] text-muted">
-          Your name
-        </label>
-        <input
-          id="name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          maxLength={20}
-          autoComplete="nickname"
-          className="mt-2 h-14 w-full border-2 border-line bg-panel px-4 text-[18px] outline-none focus:border-text"
-        />
-        <button disabled={!name.trim()} className={`${PRIMARY} mt-4`}>
-          Get 1,000 Oats
-        </button>
-      </form>
+      <button onClick={() => onJoin('')} className={`${PRIMARY} mt-8`}>
+        Sign in with Google
+      </button>
+      <p className="mt-3 text-[14px] text-muted">You start with 1,000 Oats.</p>
     </main>
   )
 }
@@ -220,7 +204,7 @@ function DemoPhone() {
       view={view}
       player={player}
       bets={bets}
-      onJoin={(nickname) => setPlayer({ nickname, credits: 1000 })}
+      onJoin={() => setPlayer({ nickname: 'You', credits: 1000 })}
       onBet={(horse, market, amount) => {
         setPlayer((current) => current && { ...current, credits: current.credits - amount })
         setBets((current) => [{ horse, market, amount }, ...current])
