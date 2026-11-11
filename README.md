@@ -6,12 +6,12 @@ Every week a new model claims it is the best coder. Model Derby lets the audienc
 
 Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 2026-11-10.
 
-> This project is in build. [Status](#status) shows what works today.
+**Live: https://www.modelderby.com**
 
 ## How a race works
 
-1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model for the next race.
-2. **Betting opens.** The big screen shows a QR code. You scan it, pick a rider name and get 1,000 Credits. No account is needed, and a Google login is the second way in. You pick one horse per race and bet on it to Win, to Place, or both.
+1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model in an Arena race.
+2. **Betting opens.** You open `/join` (the QR code at the venue points to it), pick a rider name and get 1,000 Credits. No account is needed, and a Google login is the second way in. You pick one horse per race and bet on it to Win, to Place, or both.
 3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of at least 60 seconds, so other players can get in. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
 4. **The race.** Each horse gets an identical copy of the room and 3 minutes. The screens show the progress of each horse from 0 to 100 and its cost in dollars, live. Betting stays open and the odds move with every bet.
 5. **The finish.** The winner is the horse that solves the challenge at the lowest cost, not the fastest. Betting closes when the first horse finishes. The other horses race on, because a later finisher can be cheaper. If no horse finishes in 3 minutes, the horse with the most progress wins.
@@ -21,11 +21,17 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 
 A challenge is a room: a directory in a sandbox, made from a random seed, so each horse of a race gets the same instance. Each horse has one tool, a shell. A checker with fixed rules decides the progress and the finish. No model judges a result.
 
-| Room | Task | Progress |
+| Room | Category | What the audience sees |
 |---|---|---|
-| The Cube | Solve a scrambled Rubik's cube with the command `cube` | Solved pieces out of 20 |
-| The Rover | Drive a rover through a warehouse with the command `robot` and deliver one package before the battery is empty | Distance to the package, then to the goal |
-| The Vault | Open 5 locks with shell commands and file edits | 20 per open lock |
+| The Cube | Puzzle | A scrambled Rubik's cube. The models solve it with a command line tool. |
+| Paper Trail | Research | Four questions. Each answer opens the next. One number at the end. |
+| Black Box | Reverse | A program with no source. Five layers. One password. |
+| Lost Rover | Robotics | A rover in a warehouse. It must deliver one package before the battery is empty. |
+| Bug Hunt | Code | Five bugs. No hints. The tests are hidden. |
+| The Vault | Escape | An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map. |
+| Slow Lane | Code | It works. It is slow. Make it ten times faster. |
+
+The list of the rooms is `shared/src/rooms.ts`.
 
 The state of the cube and of the rover is a log of commands. The checker replays that log from the seed, so a horse cannot edit its way to the goal.
 
@@ -110,7 +116,7 @@ flowchart LR
 - **Hidden challenges.** Before and during a race, the audience and the model owners see only a category and one sentence per task. The real task is generated at race start from a private pool with a fresh random seed. Nobody can train a model on the exact task.
 - **Open afterwards.** The seed is published when the race is settled. With it, anyone can rebuild the room and check the result.
 - **The checker is out of reach.** The runner runs its own copy of the checker. An agent that edits the checker in its room changes nothing. The checker stores only hashes of the answers.
-- **Equal limits.** Every horse gets the same prompt, the same sandbox, the same 3 minutes, the same step limit and the same token budget. This includes the models that players enter.
+- **Equal limits.** Every horse gets the same prompt, the same sandbox, the same 3 minutes and the same limit of 40 steps. This includes the models that players enter.
 
 ## Stack
 
@@ -131,6 +137,13 @@ cp frontend/.env.example frontend/.env.local
 cp backend/.env.example backend/.env
 ```
 
+The database is a Supabase project. Link it and apply the migrations from `backend/`:
+
+```
+supabase link --project-ref <your project ref>
+supabase db push
+```
+
 Set these values in `frontend/.env.local`:
 
 | Variable | Value |
@@ -144,11 +157,17 @@ Set these values in `backend/.env`:
 | Variable | Value |
 |---|---|
 | `ARCHIL_API_KEY` | The Archil API key. |
-| `ARCHIL_REGION` | The Archil region. The default is `aws-us-west-2`. |
+| `ARCHIL_REGION` | The Archil region, for example `aws-us-east-1`. |
 | `OPENROUTER_API_KEY` | The OpenRouter key. All models run through OpenRouter. |
 | `SUPABASE_URL` | The URL of the Supabase project. |
 | `SUPABASE_SERVICE_ROLE_KEY` | The service role key. Never put this key in the frontend. |
 | `KEENABLE_API_KEY` | Optional. Web search for the agents. |
+
+The runner opens a race only for a room that is on the Archil disk. The rooms of Model Derby are private, so you need your own: a folder `pool/<room>/` with `setup.py`, `check.sh` and `solve.py`, and one entry in `shared/src/rooms.ts`. Push a room to the disk from `backend/`:
+
+```
+node --env-file=.env src/prepare.ts <room>
+```
 
 ## Commands
 
@@ -168,28 +187,26 @@ pnpm start   # runner without watch mode, does not read .env
 pnpm build   # type check only
 ```
 
-The runner answers `GET /health` on port 8080. There is no linter and no test suite.
+The runner answers `GET /health` on port 8080. Run exactly one runner: two runners run each race twice.
+
+There is no linter. The tests are small and run alone, from the repo root:
+
+```
+node --test shared/src/odds.test.ts     # the odds maths
+node --test shared/src/finish.test.ts   # the finish order
+```
 
 ## Project layout
 
 ```
-frontend/            the Vite app: phone view, board and submit form
+frontend/            the Vite app: race list, race page, Arena, leaderboard and the board
 backend/src/         the race runner
 backend/supabase/    database config and migrations
-shared/              types and the app name, used by frontend and backend
+shared/              types, the odds maths, the finish order and the list of the rooms
 ```
 
 The challenge pool (generators, checkers and answers) is private and is not in this repository.
 
 ## Status
 
-- [x] Workspace scaffold: frontend routes, runner health endpoint, shared types
-- [x] Database schema with row level security
-- [x] One agent in one sandbox, end to end
-- [x] A full race with parallel horses and a finish order (The Vault, with real models)
-- [x] Live board
-- [x] Betting and payouts
-- [x] Google login
-- [ ] Enter your own model (the entry works, no race has run with a player's model yet)
-- [ ] The lowest cost wins, with live progress, in the runner
-- [ ] The Cube and The Rover
+Model Derby was built in one day at the hackathon, and it is live at https://www.modelderby.com. Races run with real models, and betting, payouts, guest accounts and the Arena work. The Google login is in test mode, so only test accounts can use it: join as a guest at `/join`.
