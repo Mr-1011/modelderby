@@ -28,6 +28,8 @@ export default function OddsChart({ view, end }: { view: LiveRace; end: number }
       <svg
         viewBox={`0 0 ${W} ${H}`}
         className="w-full touch-none"
+        // The lines have only horizontal and vertical parts, so they can be as sharp as the pixel art.
+        shapeRendering="crispEdges"
         role="img"
         aria-label="Win chance of each horse over time"
         onPointerMove={(event) => {
