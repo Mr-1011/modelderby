@@ -12,6 +12,8 @@
   --color-accent-deep: #d94e00;
   --color-on-accent: #000000;
   --font-pixel: 'Jersey 15', ui-monospace, monospace;
+  /* Each digit has the same width, so a countdown or a cost that changes does not move the text next to it. */
+  --font-pixel--font-feature-settings: 'tnum';
   --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* Horse.tsx sets --sprite-w. The sheet holds 3 frames, and the gallop is frames 1 and 2. */
