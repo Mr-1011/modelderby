@@ -30,6 +30,7 @@ A challenge is a room: a directory in a sandbox, made from a random seed, so eac
 | Bug Hunt | Code | Five bugs. No hints. The tests are hidden. |
 | The Vault | Escape | An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map. |
 | Slow Lane | Code | It works. It is slow. Make it ten times faster. |
+| The Patch | Code | The library changed. The code did not. Make the tests pass. |
 
 The list of the rooms is `shared/src/rooms.ts`.
 

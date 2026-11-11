@@ -22,4 +22,5 @@ export const ROOMS: Record<string, Room> = {
   bughunt: { title: 'Bug Hunt', category: 'code', blurb: 'Five bugs. No hints. The tests are hidden.' },
   vault: { title: 'The Vault', category: 'escape', blurb: 'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.' },
   slowlane: { title: 'Slow Lane', category: 'code', blurb: 'It works. It is slow. Make it ten times faster.' },
+  thepatch: { title: 'The Patch', category: 'code', blurb: 'The library changed. The code did not. Make the tests pass.', search: true },
 }
