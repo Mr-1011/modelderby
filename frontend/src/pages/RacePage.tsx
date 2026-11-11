@@ -1,10 +1,11 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import EntryDialog from '../components/EntryDialog'
 import OddsChart from '../components/OddsChart'
 import { oats } from '../lib/format'
 import { placeBet, useModels, useNow, usePlayer, useRace, useSession } from '../lib/queries'
-import { EntryForm, MAX_HORSES } from './Arena'
+import { MAX_HORSES } from './Arena'
 import { PhoneView } from './Phone'
 
 // A free place in the lineup of an open race. A player adds one OpenRouter model as a horse, and each player can bet on it.
@@ -13,12 +14,6 @@ function AddHorse({ race, signedIn }: { race: number; signedIn: boolean }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
-  if (open && models)
-    return (
-      <li className="col-span-full border-2 border-accent bg-panel p-3">
-        <EntryForm race={race} models={models} />
-      </li>
-    )
   return (
     <li className="min-w-0">
       <button
@@ -28,6 +23,7 @@ function AddHorse({ race, signedIn }: { race: number; signedIn: boolean }) {
         <span className="font-pixel text-[45px] leading-none">+</span>
         <span className="font-pixel text-[22.5px] leading-none lg:text-[30px]">Add a horse</span>
       </button>
+      {open && models && <EntryDialog race={race} models={models} onClose={() => setOpen(false)} />}
     </li>
   )
 }
