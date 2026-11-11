@@ -1,0 +1,5 @@
+@import 'tailwindcss';
+
+/* All colors and fonts go here as theme tokens, so the design changes in one place. */
+@theme {
+}
