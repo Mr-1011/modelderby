@@ -163,7 +163,7 @@ export function PhoneView({
               key={horse.id}
               onPointerEnter={() => setActive(horse.id)}
               onPointerLeave={() => setActive(null)}
-              className={`min-w-0 border-2 bg-panel ${active === horse.id ? 'border-text' : mine === horse.id ? 'border-accent' : 'border-line'}`}
+              className={`flex min-w-0 flex-col border-2 bg-panel ${active === horse.id ? 'border-text' : mine === horse.id ? 'border-accent' : 'border-line'}`}
             >
               <div className="relative flex justify-center pb-1 pt-5" style={grass(px)}>
                 <span
@@ -174,19 +174,20 @@ export function PhoneView({
                 </span>
                 <Horse id={horse.id} scale={px} idle running={entry.state === 'running'} />
               </div>
-              <div className="p-3">
-                <p className="truncate font-pixel text-[22.5px] leading-none lg:text-[30px]">{horse.name}</p>
-                {/* The model id names the provider, so the provider has no line of its own. */}
-                <p className="mt-1.5 truncate text-[12px] text-muted">
+              {/* No text of a box is cut: a long name goes on to the next line, and the buttons stay at the bottom of the row. */}
+              <div className="flex grow flex-col p-3">
+                <p className="font-pixel text-[22.5px] leading-none [overflow-wrap:anywhere] lg:text-[30px]">{horse.name}</p>
+                {/* The model id names the provider, so the provider has no line of its own. On a narrow box it needs 2 lines. */}
+                <p className="mt-1.5 min-h-9 text-[12px] text-muted [overflow-wrap:anywhere] lg:min-h-0">
                   {horse.model}
                   {horse.reasoning_effort && `, ${horse.reasoning_effort} effort`}
                 </p>
                 {/* Before the race: the token price of the model. Then: how far the horse is, and what it has cost. */}
                 {entry.state === 'waiting' ? (
-                  <p className="truncate text-[12px] text-muted">{model ? `${usd(model.prompt)} / ${usd(model.completion)} per M` : '\u00a0'}</p>
+                  <p className="text-[12px] text-muted">{model ? `${usd(model.prompt)} / ${usd(model.completion)} per M` : '\u00a0'}</p>
                 ) : (
                   <>
-                    <p className={`truncate text-[12px] ${entry.state === 'escaped' ? 'text-accent' : 'text-muted'}`}>
+                    <p className={`text-[12px] ${entry.state === 'escaped' ? 'text-accent' : 'text-muted'}`}>
                       {progressOf(race.task, entry)}, {stateOf(entry)}
                     </p>
                     <div className="mt-3 flex items-end justify-between gap-2">
@@ -195,7 +196,7 @@ export function PhoneView({
                     </div>
                   </>
                 )}
-                <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="mt-auto grid grid-cols-2 gap-2 pt-3">
                   {(['win', 'place'] as const).map((market) => {
                     // The stake of the player on this horse in this market is on the button, and after the race the result.
                     const own = bets.filter((bet) => bet.horse === horse.id && bet.market === market)

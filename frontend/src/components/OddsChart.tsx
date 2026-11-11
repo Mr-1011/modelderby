@@ -85,7 +85,7 @@ export default function OddsChart({
           {horses.map((horse) => (
             <li key={horse.id} className="flex items-center gap-2 py-1" style={{ opacity: dim(horse.id) }} {...pick(horse.id)}>
               <i className="size-3 shrink-0" style={{ background: colorOf(horse.id).color }} />
-              <span className="min-w-0 grow truncate">{horse.name}</span>
+              <span className="min-w-0 grow [overflow-wrap:anywhere]">{horse.name}</span>
               {horse.id in shown.chance && (
                 <span className="shrink-0 text-muted">
                   {Math.round(shown.chance[horse.id] * 100)}%<span className="hidden lg:inline">, {odds(1 / shown.chance[horse.id])}</span>

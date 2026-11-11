@@ -57,7 +57,7 @@ export default function RacePage() {
         </div>
         <ol className="grid grid-cols-2 gap-3 pt-6 sm:grid-cols-3 lg:grid-cols-4">
           {[0, 1, 2, 3, 4, 5].map((n) => (
-            <li key={n} className="h-[246.5px] border-2 border-line bg-panel lg:h-[281px]" />
+            <li key={n} className="h-[264.5px] border-2 border-line bg-panel lg:h-[281px]" />
           ))}
         </ol>
       </div>

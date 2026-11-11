@@ -116,8 +116,8 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
                 className="group flex w-full items-center justify-between gap-4 border-b-2 border-line px-4 py-3 text-left hover:bg-panel aria-pressed:bg-accent aria-pressed:text-on-accent"
               >
                 <span className="min-w-0">
-                  <span className="block truncate text-[15px] font-medium">{shortName(option)}</span>
-                  <span className="block truncate text-[12px] text-muted group-aria-pressed:text-on-accent">{option.id}</span>
+                  <span className="block text-[15px] font-medium [overflow-wrap:anywhere]">{shortName(option)}</span>
+                  <span className="block text-[12px] text-muted [overflow-wrap:anywhere] group-aria-pressed:text-on-accent">{option.id}</span>
                 </span>
                 <span className="shrink-0 text-[13px] text-muted group-aria-pressed:text-on-accent">
                   {usd(option.prompt)} / {usd(option.completion)}
