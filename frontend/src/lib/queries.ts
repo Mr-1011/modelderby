@@ -39,6 +39,13 @@ export function useSession() {
 
 export const signOut = () => supabase.auth.signOut({ scope: 'local' })
 
+// A guest account for a player who scans a QR code: an anonymous user with a rider name and 1,000 Oats.
+// The session lives only in this browser, so the account is gone when the browser forgets it.
+export async function joinAsGuest(name: string) {
+  const { error } = await supabase.auth.signInAnonymously({ options: { data: { name } } })
+  if (error) throw new Error(error.message)
+}
+
 // A query function must throw, so that TanStack Query sees the error.
 async function get<T>(query: PromiseLike<{ data: unknown; error: { message: string } | null }>) {
   const { data, error } = await query

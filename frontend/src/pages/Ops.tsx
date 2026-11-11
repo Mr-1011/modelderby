@@ -1,5 +1,7 @@
-import type { RaceEvent } from '@horserace/shared'
+import { type RaceEvent, SITE_URL } from '@horserace/shared'
 import { useQueryClient } from '@tanstack/react-query'
+import qrcode from 'qrcode-generator'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { clock, usd } from '../lib/format'
 import { type LiveRace, startRace, useForksToday, useIsAdmin, useNow, useRace, useRaceEvents, useRaces } from '../lib/queries'
@@ -74,6 +76,62 @@ function Node({ lane, events, view, now, right }: { lane: Lane; events: RaceEven
         </div>
       </div>
     </li>
+  )
+}
+
+// A QR code in the two colors of the theme. px is the size of one module. The 4 light modules around it are the quiet zone.
+function Qr({ text, px }: { text: string; px: number }) {
+  const code = qrcode(0, 'M')
+  code.addData(text)
+  code.make()
+  const n = code.getModuleCount()
+  let path = ''
+  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (code.isDark(y, x)) path += `M${x + 4} ${y + 4}h1v1h-1z`
+  return (
+    <svg role="img" aria-label={text} width={(n + 8) * px} height={(n + 8) * px} viewBox={`0 0 ${n + 8} ${n + 8}`} shapeRendering="crispEdges">
+      <rect width="100%" height="100%" className="fill-text" />
+      <path d={path} className="fill-bg" />
+    </svg>
+  )
+}
+
+// The two ways in for the audience: everyone joins and lands on the race list, a judge lands on one race.
+function JoinCodes({ races }: { races: number[] }) {
+  const [picked, setPicked] = useState<number>()
+  const [zoom, setZoom] = useState('')
+  const race = picked && races.includes(picked) ? picked : races[0]
+  const links = [
+    ['Everyone', `${SITE_URL}/join`],
+    // No judge code while no race is open.
+    ...(race ? [['Judge', `${SITE_URL}/join?race=${race}`]] : []),
+  ]
+  return (
+    <div className="border-2 border-line p-3">
+      <div className="flex items-start justify-between gap-3">
+        {links.map(([label, link]) => (
+          <button key={label} onClick={() => setZoom(link)} className="text-left">
+            <p className={LABEL}>{label}</p>
+            <div className="mt-1">
+              <Qr text={link} px={3} />
+            </div>
+          </button>
+        ))}
+      </div>
+      <label className="mt-2 flex items-center justify-end gap-2 text-[12px] text-muted">
+        Race of the judge code
+        <select value={race} onChange={(event) => setPicked(Number(event.target.value))} className="h-7 border-2 border-line bg-bg px-1 text-text">
+          {races.map((id) => (
+            <option key={id}>{id}</option>
+          ))}
+        </select>
+      </label>
+      {zoom && (
+        <button onClick={() => setZoom('')} className="fixed inset-0 z-10 grid place-content-center justify-items-center gap-6 bg-bg">
+          <Qr text={zoom} px={16} />
+          <p className="font-pixel text-[45px] leading-none">{zoom.replace('https://', '')}</p>
+        </button>
+      )}
+    </div>
   )
 }
 
@@ -203,8 +261,10 @@ export default function Ops() {
             }}
           />
         ))}
+        <div className="grid gap-3 xl:col-start-4">
+          <JoinCodes races={(races ?? []).filter(({ race }) => race.status !== 'settled').map(({ race }) => race.id).sort((a, b) => a - b)} />
         {/* All events of the runner, newest first. */}
-        <ol className="max-h-[calc(100vh-140px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5 xl:col-start-4">
+        <ol className="max-h-[calc(100vh-420px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5">
           {events.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
           {events.slice(0, 200).map((event) => (
             <li key={event.id} className="truncate">
@@ -215,6 +275,7 @@ export default function Ops() {
             </li>
           ))}
         </ol>
+        </div>
       </div>
     </main>
   )
