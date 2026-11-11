@@ -115,14 +115,8 @@ export default function Join() {
               {error}
             </p>
           )}
-          <p className="mt-4 text-[15px] leading-relaxed">
-            You start with 1,000 Credits. Credits are not real money. This account stays in this browser.
-          </p>
         </div>
       </form>
-      <Link to="/signin" state={{ from: to }} className="mt-6 text-[15px] underline underline-offset-4 hover:text-accent">
-        Sign in with Google
-      </Link>
     </main>
   )
 }
