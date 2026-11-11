@@ -7,6 +7,7 @@ import { finishOrder } from './finish.ts'
 import { buildBase, disk, remove, removeLeftovers, runCheck } from './prepare.ts'
 
 const RACE_MS = 180_000
+const BUILD_MS = 20_000
 const MAX_STEPS = 40
 const OPEN_RACES = 3
 const MINUTE = 60_000
@@ -92,6 +93,7 @@ async function ride(
   queue: (write: () => PromiseLike<unknown>) => void,
 ) {
   const messages: unknown[] = [{ role: 'user', content: PROMPT }]
+  // Three failed requests or answers without a command in a row end the race of this horse.
   let failures = 0
   while (lane.steps < MAX_STEPS && !signal.aborted) {
     let reply
@@ -110,12 +112,14 @@ async function ride(
     messages.push(message)
     const calls = message.tool_calls ?? []
     if (!calls.length) {
-      // A model that only talks gets one reminder per answer. Three answers without a command end its race.
+      // A model that only talks gets a reminder.
       if (++failures === 3) return
       messages.push({ role: 'user', content: 'Use the bash tool to run commands. Run /room/check.sh to see your progress.' })
       continue
     }
+    failures = 0
     for (const call of calls) {
+      if (signal.aborted) return
       let command = ''
       let output: string
       try {
@@ -157,9 +161,11 @@ export async function runRace(race: Race) {
   const { error: taken } = await db.from('race_secrets').insert({ race_id: race.id, seed })
   if (taken) return
 
-  const lanes = await lanesOf(race.id)
   const allowed = await allowedModels()
   const { base, check } = await buildBase(`derby-r${race.id}-base`, race.task, seed)
+  // The room is ready before the countdown ends. The entries close at the countdown, so the lanes are read after it.
+  await sleep(Date.parse(race.countdown_ends_at!) - Date.now())
+  const lanes = await lanesOf(race.id)
   const forks = new Map<string, Sandbox>()
   await Promise.all(
     lanes.map(async (lane) => {
@@ -272,8 +278,9 @@ async function tick() {
     latest = Math.max(Date.now() + 3 * MINUTE, latest + 6 * MINUTE)
     await must(db.rpc('open_race', { p_task: 'vault', p_countdown_ends_at: new Date(latest).toISOString() }))
   }
+  // The room build takes about 15 s, so it starts before the countdown ends.
   const due = open[0]
-  if (due && Date.parse(due.countdown_ends_at!) <= Date.now()) await runRace(due)
+  if (due && Date.parse(due.countdown_ends_at!) - BUILD_MS <= Date.now()) await runRace(due)
 }
 
 // After a crash: free the sandboxes, release the races that never started, and settle a race that was running.
