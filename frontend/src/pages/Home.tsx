@@ -9,7 +9,9 @@ const TABS = ['Popular', 'Latest'] as const
 // Popular puts the races that a player can still bet on first, then the most Credits of players. Latest puts the newest first.
 export default function Home() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Popular')
-  const { data, error } = useRaces()
+  const { data: all, error } = useRaces()
+  // The Arena races are on the Arena page only.
+  const data = all?.filter(({ race }) => !race.arena)
   const now = useNow()
   // The list arrives newest first, and the sort keeps that order for equal pools.
   const over = (status: string) => Number(status === 'settled')

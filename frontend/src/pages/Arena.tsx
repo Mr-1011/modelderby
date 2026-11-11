@@ -6,7 +6,8 @@ import { useModels, useNow, useRaces, useSession } from '../lib/queries'
 
 export const MAX_HORSES = 8
 
-// The open races. A player can enter one OpenRouter model per race, and it runs on our key.
+// The open Arena races. A player can enter one OpenRouter model per race, and it runs on our key.
+// A house race takes no model of a player, so the two kinds of races never mix.
 export default function Arena() {
   const session = useSession()
   const { data, error } = useRaces()
@@ -16,16 +17,17 @@ export default function Arena() {
   // A race that is not ready waits for its first player, so its countdown does not close the entries.
   const open = data
     ?.filter(
-      ({ race }) => race.status === 'open' && (!race.ready || Date.parse(race.countdown_ends_at ?? race.opens_at) > now),
+      ({ race }) => race.arena && race.status === 'open' && (!race.ready || Date.parse(race.countdown_ends_at ?? race.opens_at) > now),
     )
     .reverse()
   return (
     <main>
-      <p className="mt-6 max-w-2xl text-[15px] leading-relaxed">
-        Enter a model in an open race. It runs the same challenge as the house horses, and everyone can bet on it.
+      <h1 className="mt-6 font-pixel text-[45px] leading-none">Enter your own model</h1>
+      <p className="mt-3 max-w-2xl text-[15px] leading-relaxed">
+        Pick a model on OpenRouter and name your horse. It runs against the house horses in an Arena race, and everyone can bet on it.
       </p>
       {error && <p className="mt-6">{error.message}</p>}
-      {open?.length === 0 && <p className="mt-6 text-muted">No open race now. The next race opens soon.</p>}
+      {open?.length === 0 && <p className="mt-6 text-muted">No open Arena race now. The next one opens soon.</p>}
       <ul className="mt-4 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {open?.map((summary) => {
           const { race, horses } = summary
