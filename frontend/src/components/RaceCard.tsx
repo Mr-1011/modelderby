@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { clock, oats, odds } from '../lib/format'
+import { oats, odds } from '../lib/format'
 import type { RaceSummary } from '../lib/queries'
-import { RACE_MS, ROOMS } from '../lib/race'
+import { ROOMS, statusOf } from '../lib/race'
 import Glyph from './Glyph'
 import Horse from './Horse'
 import { grass } from './Track'
@@ -12,12 +12,7 @@ import { grass } from './Track'
 export default function RaceCard({ summary, now, children }: { summary: RaceSummary; now: number; children?: ReactNode }) {
   const { race, horses, pool, favorite, favoriteOdds } = summary
   const running = race.status === 'running'
-  const status =
-    race.status === 'open'
-      ? `Starts in ${clock(Date.parse(race.countdown_ends_at ?? race.opens_at) - now + 999)}`
-      : running
-        ? `${clock(now - Date.parse(race.started_at!))} / ${clock(RACE_MS)}`
-        : `${horses.find((horse) => horse.id === race.winner_horse)?.name ?? 'No horse'} wins`
+  const status = statusOf(race, now, horses.find((horse) => horse.id === race.winner_horse)?.name)
   return (
     <li className="min-w-0 border-2 border-accent bg-panel">
       <Link to={`/race/${race.id}`} className="block">

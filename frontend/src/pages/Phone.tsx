@@ -5,9 +5,9 @@ import GoogleButton from '../components/GoogleButton'
 import Horse from '../components/Horse'
 import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
-import { clock, oats, odds, usd } from '../lib/format'
+import { oats, odds, usd } from '../lib/format'
 import { useModels } from '../lib/queries'
-import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
+import { type RaceView, ROOMS, statusOf } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
@@ -123,14 +123,7 @@ export function PhoneView({
 
   const open = race.status !== 'settled' && !race.betting_closed_at
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
-  const status =
-    race.status === 'open'
-      ? `Starts in ${clock(Date.parse(race.countdown_ends_at ?? race.opens_at) - now + 999)}`
-      : race.status === 'running'
-        ? `${clock(now - Date.parse(race.started_at!))} / ${clock(RACE_MS)}`
-        : winner
-          ? `${winner.horse.name} wins`
-          : 'Race over'
+  const status = statusOf(race, now, winner?.horse.name)
   const slipLane = slip && lanes.find((lane) => lane.horse.id === slip.horse)
   // A player bets on one horse per race.
   const mine = bets[0]?.horse

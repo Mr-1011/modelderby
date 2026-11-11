@@ -2,9 +2,9 @@ import { APP_NAME } from '@horserace/shared'
 import { useEffect, useRef, useState } from 'react'
 import Track, { at, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
-import { clock, oats, odds, usd } from '../lib/format'
+import { oats, odds, usd } from '../lib/format'
 import { useBoardRaceId, useRace } from '../lib/queries'
-import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
+import { type RaceView, ROOMS, statusOf } from '../lib/race'
 import { colorOf, SPRITE_H, SPRITE_W } from '../lib/sprite'
 
 // The board is drawn at 1920x1080 and scaled to the screen, so every size here is a real pixel on the big screen.
@@ -61,14 +61,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
   const spriteW = SPRITE_W * px
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
 
-  const status =
-    race.status === 'open'
-      ? `Starts in ${clock(Date.parse(race.countdown_ends_at ?? race.opens_at) - now + 999)}`
-      : race.status === 'running'
-        ? `${clock(now - Date.parse(race.started_at!))} / ${clock(RACE_MS)}`
-        : winner
-          ? `${winner.horse.name} wins`
-          : 'Race over'
+  const status = statusOf(race, now, winner?.horse.name)
 
   return (
     <main className="fixed inset-0 overflow-hidden bg-bg">
