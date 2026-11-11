@@ -16,11 +16,10 @@ const MINUTE = 60_000
 // With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
 const ELIMINATE = ['1', 'true'].includes(process.env.LIVE_ELIMINATION ?? '')
 
+// The prompt is neutral: it does not tell the horse how the race is scored.
 const prompt = (task: string) =>
-  `Your task is in ${task === 'vault' ? '/room/README.txt' : '/room/TASK.md'}. Solve it inside 3 minutes. ` +
-  'Of the models that solve it in time, the one with the lowest token cost wins, so use as few tokens as you can. ' +
-  'If no model solves it, the highest progress wins. Run /room/check.sh to see your progress. ' +
-  'Use only shell commands and file edits; there is no network. Use the bash tool.'
+  `Your task is in ${task === 'vault' ? '/room/README.txt' : '/room/TASK.md'}. Solve it with shell commands: use the bash tool. ` +
+  'Run /room/check.sh to see your progress. You have 3 minutes.'
 
 const BASH_TOOL = {
   type: 'function',
@@ -49,6 +48,20 @@ const lanesOf = (race: number) =>
   must(db.from('entries').select('*, horse:horses(*)').eq('race_id', race)) as Promise<Lane[]>
 const patchEntry = (race: number, horse: string, patch: Partial<Entry>) =>
   must(db.from('entries').update(patch).eq('race_id', race).eq('horse_id', horse))
+
+// One row of race_events for the admin view. The time is the time of the event, not of the write.
+// Never put the output of a command, the seed or a check script into an event.
+type EventFields = { horse_id?: string; text?: string; cost_usd?: number; tokens_in?: number; tokens_out?: number }
+function raceEvent(race: number, kind: string, fields: EventFields) {
+  const row = { race_id: race, kind, at: new Date().toISOString(), ...fields }
+  // An event that is not saved must not stop a race.
+  return async () => {
+    const { error } = await db.from('race_events').insert(row)
+    if (error) console.error('race_events', kind, error.message)
+  }
+}
+// The first words of what the model wrote before its tool call.
+const firstWords = (content: unknown) => (typeof content === 'string' ? content.trim().split(/\s+/).slice(0, 3).join(' ') : '')
 
 async function chat(lane: Lane, messages: unknown[], signal: AbortSignal) {
   const effort = lane.horse.reasoning_effort
@@ -108,6 +121,7 @@ async function ride(
   task: string,
   signal: AbortSignal,
   update: (command: string, output: string) => Promise<unknown>,
+  event: (kind: string, fields: EventFields) => void,
 ) {
   const messages: unknown[] = [{ role: 'user', content: prompt(task) }]
   // Three failed requests or answers without a command in a row end the race of this horse.
@@ -126,6 +140,13 @@ async function ride(
     lane.tokens += reply.usage?.total_tokens ?? 0
     lane.cost_usd += reply.usage?.cost ?? 0
     const message = reply.choices[0].message
+    event('step', {
+      horse_id: lane.horse_id,
+      text: firstWords(message.content),
+      cost_usd: reply.usage?.cost ?? 0,
+      tokens_in: reply.usage?.prompt_tokens,
+      tokens_out: reply.usage?.completion_tokens,
+    })
     messages.push(message)
     const calls = message.tool_calls ?? []
     if (!calls.length) {
@@ -154,6 +175,7 @@ async function ride(
       messages.push({ role: 'tool', tool_call_id: call.id, content: output })
       lane.steps++
       lane.last_step = command.replace(/\s+/g, ' ').slice(0, 120)
+      event('tool_call', { horse_id: lane.horse_id, text: lane.last_step })
       // The update stops this horse when it finished or went out.
       await update(command, output)
     }
@@ -166,18 +188,40 @@ export async function runRace(race: Race) {
   const { error: taken } = await db.from('race_secrets').insert({ race_id: race.id, seed })
   if (taken) return
 
+  // Writes go in order, and they do not hold up the horses.
+  let writes: Promise<unknown> = Promise.resolve()
+  const queue = (write: () => PromiseLike<unknown>) => {
+    writes = writes.then(write).catch((error) => console.error(error))
+  }
+  const event = (kind: string, fields: EventFields) => queue(raceEvent(race.id, kind, fields))
+  // The end of a horse: solved, out or timeout, with its progress and its total cost.
+  const ended = (lane: Lane) =>
+    event(lane.state === 'escaped' ? 'solved' : lane.state, { horse_id: lane.horse_id, text: String(lane.progress), cost_usd: lane.cost_usd })
+
   const allowed = await allowedModels()
+  const built = Date.now()
   const { base, check } = await buildBase(`derby-r${race.id}-base`, race.task, seed)
+  event('base_built', { text: `${race.task} ${base.id} ${Date.now() - built} ms` })
   // The room is ready before the countdown ends. The entries close at the countdown, so the lanes are read after it.
   await sleep(Math.max(0, Date.parse(race.countdown_ends_at!) - Date.now()))
   const lanes = await lanesOf(race.id)
   const forks = new Map<string, Sandbox>()
   await Promise.all(
     lanes.map(async (lane) => {
-      if (lane.horse.kind === 'submitted' && !allowed.has(lane.horse.model)) return
+      const failed = (text: string) => event('failed', { horse_id: lane.horse_id, text: text.slice(0, 120) })
+      if (lane.horse.kind === 'submitted' && !allowed.has(lane.horse.model)) {
+        return failed('the model is not on OpenRouter, has no tools or is above the price limit')
+      }
+      const forked = Date.now()
       await base.fork({ name: `derby-r${race.id}-${lane.horse_id}` }).then(
-        (fork) => forks.set(lane.horse_id, fork),
-        (error) => console.error(lane.horse_id, error),
+        (fork) => {
+          forks.set(lane.horse_id, fork)
+          event('fork_created', { horse_id: lane.horse_id, text: `${fork.id} ${Date.now() - forked} ms` })
+        },
+        (error) => {
+          console.error(lane.horse_id, error)
+          failed(String(error?.message ?? error))
+        },
       )
     }),
   )
@@ -196,11 +240,6 @@ export async function runRace(race: Race) {
     db.from('races').update({ status: 'running', started_at: new Date(started).toISOString(), place_count: placeCount }).eq('id', race.id),
   )
 
-  // Writes go in order, and they do not hold up the horses.
-  let writes: Promise<unknown> = Promise.resolve()
-  const queue = (write: () => PromiseLike<unknown>) => {
-    writes = writes.then(write).catch((error) => console.error(error))
-  }
   const stop = new AbortController()
   const timer = setTimeout(() => stop.abort(), RACE_MS)
   const stopped = new Promise((resolve) => stop.signal.addEventListener('abort', resolve))
@@ -221,7 +260,9 @@ export async function runRace(race: Race) {
             const result = await runCheck(fork, check).catch(() => null)
             if (signal.aborted) return
             const ms = Date.now() - started
+            const before = lane.progress
             if (result) record(lane, result, ms)
+            if (lane.progress > before) event('checkpoint', { horse_id: lane.horse_id, text: String(lane.progress) })
             if (lane.state === 'escaped') {
               lowest = Math.min(lowest, lane.cost_usd)
               // Betting closes at the first finish. settle_race sets the winner, because the lowest cost wins.
@@ -229,7 +270,10 @@ export async function runRace(race: Race) {
                 queue(() => must(db.from('races').update({ betting_closed_at: new Date().toISOString() }).eq('id', race.id)))
               }
             } else if (ELIMINATE && lane.cost_usd > lowest) lane.state = 'out'
-            if (lane.state !== 'running') own.abort()
+            if (lane.state !== 'running') {
+              own.abort()
+              ended(lane)
+            }
             const { horse: _, ...row } = lane
             queue(() => patchEntry(race.id, lane.horse_id, row))
             if (command === undefined) return
@@ -247,13 +291,13 @@ export async function runRace(race: Race) {
       // A horse that waits for a slow command does not hold up the end of the race.
       return Promise.race([
         stopped,
-        ride(lane, fork, race.task, signal, update)
+        ride(lane, fork, race.task, signal, update, event)
           .catch((error) => console.error(lane.horse_id, error))
           .finally(() => own.abort()),
       ])
     }),
   )
-  const ended = Math.min(Date.now() - started, RACE_MS)
+  const end = Math.min(Date.now() - started, RACE_MS)
   stop.abort()
   clearTimeout(timer)
   await writes
@@ -263,9 +307,11 @@ export async function runRace(race: Race) {
   await Promise.all(
     running.map(async (lane) => {
       const fork = forks.get(lane.horse_id)!
+      const before = { ...lane }
       try {
         // The last look at the room: a horse can reach 100 after its last check.
-        record(lane, await runCheck(fork, check), ended)
+        record(lane, await runCheck(fork, check), end)
+        if (lane.progress > before.progress) event('checkpoint', { horse_id: lane.horse_id, text: String(lane.progress) })
         // A room without a git repository gives the command log of its CLI as the diff.
         const diff = '(git add -A && git diff --cached) 2>/dev/null || cat .cube/moves.log .robot/commands.log 2>/dev/null'
         lane.diff = (await fork.exec(diff, { cwd: '/room', timeoutSeconds: 30 })).stdout
@@ -277,8 +323,10 @@ export async function runRace(race: Race) {
         console.error(lane.horse_id, error)
       }
       if (lane.state === 'running') lane.state = 'timeout'
+      if (lane.state !== before.state) ended(lane)
     }),
   )
+  await writes
   await finish(race.id, lanes)
   await Promise.allSettled([...forks.values()].map(remove))
   await remove(base).catch((error) => console.error(error))
@@ -301,6 +349,7 @@ async function finish(race: number, lanes: Lane[]) {
     }),
   )
   await must(db.rpc('settle_race', { p_race: race }))
+  await raceEvent(race, 'settled', { text: order[0] })()
 }
 
 async function tick() {
