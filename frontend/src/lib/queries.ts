@@ -324,7 +324,13 @@ export function useModels() {
         }))
         .filter(
           (model) =>
-            model.tools && !model.id.includes(':') && model.prompt <= MAX_PROMPT_USD && model.completion <= MAX_COMPLETION_USD,
+            model.tools &&
+            !model.id.includes(':') &&
+            // A router model has the price -1, because its price is not fixed.
+            model.prompt >= 0 &&
+            model.completion >= 0 &&
+            model.prompt <= MAX_PROMPT_USD &&
+            model.completion <= MAX_COMPLETION_USD,
         )
     },
   })
