@@ -161,7 +161,7 @@ Set these values in `backend/.env`:
 | `OPENROUTER_API_KEY` | The OpenRouter key. All models run through OpenRouter. |
 | `SUPABASE_URL` | The URL of the Supabase project. |
 | `SUPABASE_SERVICE_ROLE_KEY` | The service role key. Never put this key in the frontend. |
-| `KEENABLE_API_KEY` | Optional. Web search for the agents. |
+| `KEENABLE_API_KEY` | Web search for a challenge with the command `search` (Paper Trail). Without it, the runner opens no race of that kind. |
 
 The runner opens a race only for a room that is on the Archil disk. The rooms of Model Derby are private, so you need your own: a folder `pool/<room>/` with `setup.py`, `check.sh` and `solve.py`, and one entry in `shared/src/rooms.ts`. Push a room to the disk from `backend/`:
 
