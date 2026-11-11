@@ -136,6 +136,34 @@ const ART: Record<string, () => Pixel[][]> = {
       }
       return x >= 9 && x <= 24 && y >= 3 && y <= 26 ? ['T', 2] : null
     }),
+  // A plaster over a crack: the pad with its holes in the middle, and small holes in the two ends.
+  thepatch: () =>
+    paint((x, y) => {
+      const [dx, dy] = [Math.abs(x - 15.5), y - 15.5]
+      // The strip has round ends.
+      if (Math.abs(dy) < 6 && (dx < 9 || Math.hypot(dx - 9, dy) < 6)) {
+        const hole = (step: number) => Math.floor(dx) % step === 1 && Math.floor(Math.abs(dy)) % 2 === 1
+        if (dx < 5) return dx < 4 && Math.abs(dy) < 4 && hole(2) ? ['L', 0] : ['A', dy > 2 ? 1 : 0]
+        return dx > 10 && dx < 14 && Math.abs(dy) < 2 && hole(3) ? ['M', 0] : ['T', dy > 2 ? 1 : 0]
+      }
+      // The crack runs down in a zigzag.
+      const crack = 15 + [0, 1, 2, 3, 2, 1, 0, -1, -2, -1][y % 10]
+      return x === crack || x === crack + 1 ? ['M', 0] : null
+    }),
+  // An open logbook: two pages of entries, and one entry in another color. A ribbon marks the page.
+  coldcase: () =>
+    paint((x, y) => {
+      const page = x < 16 ? x - 3 : x - 17
+      if (y >= 6 && y <= 25 && page >= 0 && page <= 11) {
+        const line = [8, 11, 14, 17, 20, 23].indexOf(y)
+        const forged = x > 16 && line === 2
+        if (line >= 0 && page >= 1 && page <= [9, 7, 10, 6, 9, 8][(line + (x < 16 ? 0 : 2)) % 6]) return [forged ? 'A' : 'L', 0]
+        return ['T', x < 16 ? 1 : 0]
+      }
+      if ((x === 22 || x === 23) && y > 25 && y <= 30) return ['A', 1]
+      if ((x === 15 || x === 16) && y >= 5 && y <= 26) return ['L', 0]
+      return x >= 1 && x <= 30 && y >= 4 && y <= 27 ? ['M', 1] : null
+    }),
   // A globe with its grid, for research on the web. The light comes from the top left.
   web: () =>
     Array.from({ length: N }, (_, y) =>
