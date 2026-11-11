@@ -95,6 +95,9 @@ async function allowedModels() {
         (m: { id: string; supported_parameters?: string[]; pricing: { prompt: string; completion: string } }) =>
           !m.id.includes(':') &&
           m.supported_parameters?.includes('tools') &&
+          // A router model has the price -1, because its price is not fixed.
+          Number(m.pricing.prompt) >= 0 &&
+          Number(m.pricing.completion) >= 0 &&
           Number(m.pricing.prompt) * 1e6 <= 5 &&
           Number(m.pricing.completion) * 1e6 <= 25,
       )
