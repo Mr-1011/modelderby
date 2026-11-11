@@ -1,7 +1,7 @@
 import type { RaceEvent } from '@horserace/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { clock, usd } from '../lib/format'
 import { type LiveRace, startRace, useForksToday, useIsAdmin, useNow, useRace, useRaceEvents, useRaces } from '../lib/queries'
 import { type Lane, RACE_MS, ROOMS, statusOf } from '../lib/race'
@@ -96,12 +96,14 @@ function Start({ view, now, onError }: { view: LiveRace; now: number; onError: (
     <button
       // In the last 20 seconds the runner builds the room, so a start changes nothing.
       disabled={race.ready && Date.parse(race.countdown_ends_at ?? race.opens_at) - now < 20_000}
-      onClick={() =>
+      onClick={(event) => {
+        // The box of the race in the overview opens the detail view on a click, and this button must not.
+        event.stopPropagation()
         startRace(race.id).then(
           () => client.invalidateQueries({ queryKey: ['races'] }),
           (failure: Error) => onError(failure.message),
         )
-      }
+      }}
       className="h-9 shrink-0 bg-accent px-3 font-pixel text-[15px] uppercase leading-none text-on-accent disabled:bg-line disabled:text-muted"
     >
       Start now
@@ -334,7 +336,7 @@ function Detail({ id, events, now, onError }: { id: number; events: RaceEvent[];
                 <span className="text-muted">{newest.kind === 'tool_call' ? `$ ${newest.text}` : newest.kind === 'settled' ? name(newest.text) : newest.text}</span>
               </>
             ) : (
-              <span className="text-muted">{logged ? 'start' : 'no events for this race'}</span>
+              <span className="text-muted">{logged ? 'start' : race.status === 'open' ? 'waits for the start' : 'no events for this race'}</span>
             )}
           </p>
         </div>
@@ -419,17 +421,21 @@ function RaceGraph({ view, events, now, onError }: { view: LiveRace; events: Rac
   const base = mine.find((event) => event.kind === 'base_built')
   const built = !!base || race.status !== 'open'
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)?.horse.name
+  const navigate = useNavigate()
   return (
-    <section className="flex min-w-0 flex-col border-2 border-accent p-3">
+    // A click at any place of the box opens the detail view of this race. The title is the same link for the keyboard.
+    <section onClick={() => navigate(`/ops?race=${race.id}`)} className="flex min-w-0 cursor-pointer flex-col border-2 border-accent p-3 hover:bg-panel">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {/* The title opens the machines of this race. */}
-          <Link to={`/ops?race=${race.id}`} className="block truncate font-pixel text-[30px] leading-none">
+          <Link to={`/ops?race=${race.id}`} onClick={(event) => event.stopPropagation()} className="block truncate font-pixel text-[30px] leading-none">
             Race {race.id} <span className="text-muted">{ROOMS[race.task] ?? race.task}</span>
           </Link>
           <p className="mt-1 text-[12px] text-muted">{statusOf(race, now, winner)}</p>
         </div>
-        <Start view={view} now={now} onError={onError} />
+        <div className="flex shrink-0 items-center gap-3">
+          <p className="font-pixel text-[15px] uppercase leading-none text-accent">Detail &gt;</p>
+          <Start view={view} now={now} onError={onError} />
+        </div>
       </div>
 
       {/* Disk, then the base room of this race, then one fork for each horse. */}
