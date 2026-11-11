@@ -28,7 +28,7 @@ begin
   where h.id = w.id;
 
   -- A new race has the 6 house horses and a seed of 2,000 Credits per market.
-  v_race := public.open_race('vault', now() + interval '10 minutes');
+  v_race := public.open_race('vault', now() + interval '10 minutes', true);
   assert (select count(*) from public.entries where race_id = v_race) = 6, '6 entries';
   assert (select sum(amount) from public.bets where race_id = v_race and market = 'win') = 2000, 'win seed';
   assert (select sum(amount) from public.bets where race_id = v_race and market = 'place') = 2000, 'place seed';
@@ -125,9 +125,17 @@ begin
   assert (select credits from public.players where id = a2) = 1085, 'a tie refunds the stakes';
 
   -- A race with a countdown in the past waits. Its first player gets a new countdown of 60 seconds.
-  v_race := public.open_race('vault', now() - interval '1 minute');
+  v_race := public.open_race('vault', now() - interval '1 minute', true);
   v_horse := public.enter_model(v_race, 'z-ai/glm-5.3', 'Late Colt');
   assert (select ready and countdown_ends_at = now() + interval '60 seconds' from public.races where id = v_race), 'the first player starts a new countdown';
+
+  -- A house race takes no model of a player.
+  v_race := public.open_race('vault', now() + interval '10 minutes');
+  begin
+    perform public.enter_model(v_race, 'z-ai/glm-5.3', 'House Colt');
+    assert false, 'a model in a house race must fail';
+  exception when raise_exception then null;
+  end;
 
   -- Only an admin starts a race by hand. The race is then ready without a player and starts in 20 seconds.
   v_race := public.open_race('vault', now() + interval '10 minutes');
