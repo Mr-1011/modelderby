@@ -17,8 +17,8 @@ export default function RacePage() {
   const now = useNow()
   const [alert, setAlert] = useState('')
 
-  if (error) return <p className="p-4">{error.message}</p>
-  if (!view || session === undefined || (session && !player)) return <p className="p-4 text-muted">Loading</p>
+  if (error) return <p className="py-6">{error.message}</p>
+  if (!view || session === undefined || (session && !player)) return <p className="py-6 text-muted">Loading</p>
 
   const { race } = view
   const mine = view.bets.filter((bet) => bet.player_id === session?.user.id)

@@ -34,7 +34,7 @@ export default function OddsChart({
     onPointerEnter: () => onActive(horse),
     onPointerLeave: (event: React.PointerEvent) => event.pointerType === 'mouse' && onActive(null),
   })
-  const dim = (horse: string) => (active && active !== horse ? 0.25 : 1)
+  const dim = (horse: string) => (active && active !== horse ? 0.4 : 1)
 
   return (
     <figure>
