@@ -97,7 +97,13 @@ Rules that hold across files:
 
 ## UI rules
 
-- All colors and fonts are theme tokens in the `@theme` block of `frontend/src/index.css`. Do not hardcode them in a component.
-- Horse cards are the main element. There is exactly one chart: a line chart of the Win odds over time. No other chart, no progress bar, no race track.
-- No pill badges, no coloured shadows, no tilted images, nothing cropped. Flat colours only. Padding is at least 24 px on board cards and 16 px on the phone.
+The design direction is from Furkan (2026-11-10) and replaces the "no race track" rule of the spec: a fairground derby game in pixel art, angular and technical, with orange as the one brand color.
+
+- All colors and fonts are theme tokens in the `@theme` block of `frontend/src/index.css`. Do not hardcode them in a component. The one exception is the pixel art in `frontend/src/lib/sprite.ts`.
+- The derby track is the main element: one orange lane per horse (`components/Track.tsx`), and the horse jumps one step for each open lock. There is exactly one chart: a line chart of the Win odds over time.
+- A horse always stands on the orange `bg-accent`. Text on orange is black (`text-on-accent`), never white. `components/Horse.tsx` draws the horse from its id, so the same horse looks the same on every screen and each horse differs in breed, mane, tail and silks.
+- No rounded corners, no shadows, no gradients, no pill badges, no tilted images, nothing cropped. Borders are 2 px or 4 px. Use `font-pixel` for names, numbers and buttons, and the mono body font for the rest.
+- Few labels: a screen must explain itself without tags. Put a column label once in a header, not in every row.
+- Padding is at least 24 px on the board and 16 px on the phone. The board is drawn at 1920x1080 and scaled to the screen (`pages/Board.tsx`).
+- `/board?demo` and `/?demo` run a fake race from `lib/demo.ts` for design work. Never show it without the `demo` parameter.
 - Before and during a race, show a lock only as its category and its blurb.
