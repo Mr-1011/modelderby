@@ -1,9 +1,9 @@
 import { APP_NAME } from '@horserace/shared'
 import { useEffect, useState } from 'react'
-import Horse from '../components/Horse'
+import Track, { at } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { clock, oats, odds } from '../lib/format'
-import { type Lane, RACE_MS, type RaceView, ROOMS } from '../lib/race'
+import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
 import { SPRITE_H, SPRITE_W } from '../lib/sprite'
 
 // The board is drawn at 1920x1080 and scaled to the screen, so every size here is a real pixel on the big screen.
@@ -11,7 +11,6 @@ const W = 1920
 const H = 1080
 const LANES_H = 704
 const COLUMNS = 'grid grid-cols-[56px_380px_1fr_132px_132px] gap-x-5'
-const PLACES = ['1st', '2nd', '3rd']
 
 function useFit() {
   const [scale, setScale] = useState(1)
@@ -31,52 +30,6 @@ function useNow() {
     return () => clearInterval(timer)
   }, [])
   return now
-}
-
-// The left edge of a horse with n open locks. The nose of a horse with 5 locks is on the finish line.
-const at = (n: number, spriteW: number) => `calc((100% - ${spriteW + 8}px) * ${n} / 5)`
-
-function Track({ lane, px, settled }: { lane: Lane; px: number; settled: boolean }) {
-  const { horse, entry } = lane
-  const spriteW = SPRITE_W * px
-  const locks = entry.locks_open
-  const note =
-    entry.state === 'escaped'
-      ? `${PLACES[(entry.finish_pos ?? 0) - 1] ?? 'Escaped'} in ${clock(entry.solved_ms ?? 0)}`
-      : settled
-        ? `${locks} of 5 locks`
-        : entry.state === 'running' && entry.last_step
-          ? `$ ${entry.last_step}`
-          : ''
-  // The note goes on the side of the horse that has more room.
-  const ahead = locks < 3
-  return (
-    <div className="relative h-full overflow-hidden bg-accent">
-      {[1, 2, 3, 4].map((n) => (
-        <i key={n} className="absolute inset-y-0 w-1 bg-accent-deep" style={{ left: `calc(${at(n, spriteW)} + ${spriteW}px)` }} />
-      ))}
-      <i className="finish absolute inset-y-0 right-0 w-8" />
-      <p
-        className={`absolute top-1/2 -translate-y-1/2 truncate text-[18px] font-medium text-on-accent ${ahead ? '' : 'text-right'}`}
-        style={
-          ahead
-            ? { left: `calc(${at(locks, spriteW)} + ${spriteW + 16}px)`, right: 48 }
-            : { left: 12, right: `calc(100% - ${at(locks, spriteW)} + 12px)` }
-        }
-      >
-        {note}
-      </p>
-      <div
-        className="absolute top-1/2 -translate-y-1/2 transition-[left] duration-500 [transition-timing-function:steps(6)]"
-        style={{ left: at(locks, spriteW) }}
-      >
-        {/* The key restarts the hop each time a lock opens. */}
-        <div key={locks} className={locks ? 'motion-safe:animate-hop' : ''}>
-          <Horse id={horse.id} scale={px} running={entry.state === 'running'} />
-        </div>
-      </div>
-    </div>
-  )
 }
 
 function BoardView({ race, lanes, challenges, pool }: RaceView) {
@@ -145,7 +98,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
                   <p className="truncate font-pixel text-[42px] leading-none">{lane.horse.name}</p>
                   <p className="mt-1.5 truncate text-[17px] text-muted">{lane.horse.model}</p>
                 </div>
-                <Track lane={lane} px={px} settled={race.status === 'settled'} />
+                <Track lane={lane} px={px} settled={race.status === 'settled'} notes />
                 <span className="text-right font-pixel text-[50px] leading-none">{odds(lane.win)}</span>
                 <span className="text-right font-pixel text-[50px] leading-none text-muted">{odds(lane.place)}</span>
               </li>
