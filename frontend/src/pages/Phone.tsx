@@ -1,6 +1,7 @@
 import { APP_NAME, type Horse as HorseRow } from '@horserace/shared'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import GoogleButton from '../components/GoogleButton'
 import Horse from '../components/Horse'
 import Track from '../components/Track'
 import { useDemoRace } from '../lib/demo'
@@ -15,8 +16,8 @@ export type MyBet = { horse: string; market: Market; amount: number }
 const BUTTON = 'h-14 border-2 border-text font-pixel text-[28px] leading-none disabled:border-line disabled:text-muted'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
 
-// Login is Google only. The page that owns the session starts the sign-in, and a new player gets 1,000 Oats.
-function Join({ onJoin }: { onJoin: (nickname: string) => void }) {
+// Login is Google only, and only the button of Google starts it reliably. The demo has a button of its own.
+function Join({ onJoin, demo }: { onJoin: (nickname: string) => void; demo: boolean }) {
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
       <h1 className="font-pixel text-[64px] leading-none">{APP_NAME}</h1>
@@ -28,10 +29,19 @@ function Join({ onJoin }: { onJoin: (nickname: string) => void }) {
       <p className="mt-6 text-[17px] leading-relaxed">
         AI models race through an escape room. You bet on them with Oats. Oats are free and are not real money.
       </p>
-      <button onClick={() => onJoin('')} className={`${PRIMARY} mt-8`}>
-        Sign in with Google
-      </button>
+      <div className="mt-8">
+        {demo ? (
+          <button onClick={() => onJoin('')} className={PRIMARY}>
+            Sign in with Google
+          </button>
+        ) : (
+          <GoogleButton long />
+        )}
+      </div>
       <p className="mt-3 text-[14px] text-muted">You start with 1,000 Oats.</p>
+      <Link to="/" className="mt-8 text-[15px] underline underline-offset-4">
+        All races
+      </Link>
     </main>
   )
 }
@@ -89,13 +99,14 @@ function BetSlip({
 
 // The phone view without its data source: the live page and the demo both render it.
 export function PhoneView({
-  view, player, bets, onJoin, onBet,
+  view, player, bets, onJoin, onBet, demo = false,
 }: {
   view: RaceView
   player: Player | null
   bets: MyBet[]
   onJoin: (nickname: string) => void
   onBet: (horse: string, market: Market, amount: number) => void
+  demo?: boolean
 }) {
   const { race, lanes } = view
   const [slip, setSlip] = useState<{ horse: string; market: Market } | null>(null)
@@ -105,7 +116,7 @@ export function PhoneView({
     return () => clearInterval(timer)
   }, [])
 
-  if (!player) return <Join onJoin={onJoin} />
+  if (!player) return <Join onJoin={onJoin} demo={demo} />
 
   const open = race.status !== 'settled' && !race.betting_closed_at
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
@@ -123,7 +134,10 @@ export function PhoneView({
     <main className="mx-auto max-w-md pb-10">
       <header className="sticky top-0 z-[5] border-b-4 border-text bg-bg px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="flex items-baseline justify-between gap-4">
-          <h1 className="font-pixel text-[34px] leading-none">{APP_NAME}</h1>
+          {/* The way back to the race list. */}
+          <Link to="/" className="font-pixel text-[34px] leading-none">
+            {APP_NAME}
+          </Link>
           <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
         </div>
         <div className="mt-2 flex items-baseline justify-between gap-4 text-[14px]">
@@ -188,7 +202,7 @@ export function PhoneView({
             </li>
           ))}
         </ul>
-        <Link to="/submit" className="mt-8 inline-block text-[15px] underline underline-offset-4">
+        <Link to="/arena" className="mt-8 inline-block text-[15px] underline underline-offset-4">
           Enter your own model
         </Link>
       </section>
@@ -217,6 +231,7 @@ function DemoPhone() {
   return (
     <PhoneView
       view={view}
+      demo
       player={player}
       bets={bets}
       onJoin={() => setPlayer({ nickname: 'You', credits: 1000 })}

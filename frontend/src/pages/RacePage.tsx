@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { signIn } from '../components/GoogleButton'
 import OddsChart from '../components/OddsChart'
 import { oats } from '../lib/format'
@@ -26,13 +26,6 @@ export default function RacePage() {
   const paid = mine.reduce((sum, bet) => sum + (bet.payout ?? 0), 0)
   return (
     <>
-      {player && (
-        <nav className="mx-auto max-w-md px-4 pt-3 text-[14px]">
-          <Link to="/" className="underline underline-offset-4">
-            All races
-          </Link>
-        </nav>
-      )}
       <PhoneView
         view={view}
         player={player ?? null}

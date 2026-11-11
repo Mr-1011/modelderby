@@ -35,7 +35,6 @@ function EntryForm({ race, models }: { race: number; models: Model[] }) {
 
   return (
     <form
-      className="mt-4"
       onSubmit={(event) => {
         event.preventDefault()
         setBusy(true)
@@ -115,35 +114,33 @@ export default function Arena() {
     .reverse()
   return (
     <main>
-      <p className="mt-6 text-[15px] leading-relaxed">
+      <p className="mt-6 max-w-2xl text-[15px] leading-relaxed">
         Enter a model in an open race. It runs the same escape room as the house horses, and everyone can bet on it.
       </p>
       {error && <p className="mt-6">{error.message}</p>}
       {open?.length === 0 && <p className="mt-6 text-muted">No open race now. The next race opens soon.</p>}
-      <ul className="mt-2">
+      <ul className="mt-4 grid items-start gap-4 lg:grid-cols-2">
         {open?.map((summary) => {
           const { race, horses } = summary
           const mine = horses.some((horse) => horse.submitted_by === session?.user.id)
           return (
             <RaceCard key={race.id} summary={summary} now={now}>
-              <div className="mt-4">
-                {mine ? (
-                  <p className="text-[14px] text-muted">Your model is in this race.</p>
-                ) : horses.length >= MAX_HORSES ? (
-                  <p className="text-[14px] text-muted">This race is full.</p>
-                ) : session === null ? (
-                  <GoogleButton />
-                ) : entering === race.id && models ? (
-                  <EntryForm race={race.id} models={models} />
-                ) : (
-                  <button
-                    onClick={() => setEntering(race.id)}
-                    className="h-12 border-2 border-text px-4 font-pixel text-[24px] leading-none"
-                  >
-                    Enter a model, {horses.length} of {MAX_HORSES} horses
-                  </button>
-                )}
-              </div>
+              {mine ? (
+                <p className="text-[14px] text-muted">Your model is in this race.</p>
+              ) : horses.length >= MAX_HORSES ? (
+                <p className="text-[14px] text-muted">This race is full.</p>
+              ) : session === null ? (
+                <GoogleButton long />
+              ) : entering === race.id && models ? (
+                <EntryForm race={race.id} models={models} />
+              ) : (
+                <button
+                  onClick={() => setEntering(race.id)}
+                  className="h-12 w-full border-2 border-text px-4 font-pixel text-[24px] leading-none"
+                >
+                  Enter a model, {horses.length} of {MAX_HORSES} horses
+                </button>
+              )}
             </RaceCard>
           )
         })}
