@@ -75,9 +75,6 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
             X
           </button>
         </div>
-        <p className="px-4 pt-2 text-[13px] leading-5 text-muted">
-          Pick a model of OpenRouter. It runs the same challenge as the other horses, and each player can bet on it.
-        </p>
         <div className="px-4 pt-4">
           <input
             autoFocus
