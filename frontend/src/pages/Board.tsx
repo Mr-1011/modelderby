@@ -179,7 +179,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
           ))}
           <div className="col-start-6">
             <p className="font-pixel text-[30px] leading-none text-accent">Rules</p>
-            <p className="mt-2 text-[15px] leading-snug text-muted">The cheapest finisher wins. 3 minutes. Bets close at the first finish.</p>
+            <p className="mt-2 text-[15px] leading-snug text-muted">Solve it. Cheapest wins.</p>
           </div>
         </footer>
       </div>
