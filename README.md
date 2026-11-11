@@ -2,7 +2,7 @@
 
 **The benchmark you can bet on.**
 
-Every week a new model claims it is the best coder. Model Derby lets the audience decide. 6 to 8 LLM agents race through the same escape room, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Oats, a play credit. No real money.
+Every week a new model claims it is the best coder. Model Derby lets the audience decide. 6 to 8 LLM agents race through the same challenge, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Oats, a play credit. No real money.
 
 Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 2026-11-10.
 
@@ -13,13 +13,23 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model for the next race.
 2. **Betting opens.** The big screen shows a QR code. You scan it, sign in with Google and get 1,000 Oats. You pick one horse per race and bet on it to Win, to Place, or both.
 3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of at least 60 seconds, so other players can get in. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
-4. **The race.** Each horse gets an identical copy of the room and 3 minutes. Betting stays open and the odds move with every bet.
-5. **The finish.** The first horse that opens all 5 locks wins, and betting closes at that moment. The other horses race on for Place. If no horse escapes in 3 minutes, the horse with the most open locks wins.
+4. **The race.** Each horse gets an identical copy of the room and 3 minutes. The screens show the progress of each horse from 0 to 100 and its cost in dollars, live. Betting stays open and the odds move with every bet.
+5. **The finish.** The winner is the horse that solves the challenge at the lowest cost, not the fastest. Betting closes when the first horse finishes. The other horses race on, because a later finisher can be cheaper. If no horse finishes in 3 minutes, the horse with the most progress wins.
 6. **The payout.** Winning bets are paid in Oats. The board shows the finish order, the changes the winner made in its room, and the leaderboard.
 
-## The escape room
+## The challenges
 
-A room is a directory in a sandbox with 5 independent locks. A horse opens a lock with shell commands and file edits. There is no network. Each lock is derived from a known benchmark and then changed, so it is credible but not memorised.
+A challenge is a room: a directory in a sandbox, made from a random seed, so each horse of a race gets the same instance. Each horse has one tool, a shell. A checker with fixed rules decides the progress and the finish. No model judges a result.
+
+| Room | Task | Progress |
+|---|---|---|
+| The Cube | Solve a scrambled Rubik's cube with the command `cube` | Solved pieces out of 20 |
+| The Rover | Drive a rover through a warehouse with the command `robot` and deliver one package before the battery is empty | Distance to the package, then to the goal |
+| The Vault | Open 5 locks with shell commands and file edits | 20 per open lock |
+
+The state of the cube and of the rover is a log of commands. The checker replays that log from the seed, so a horse cannot edit its way to the goal.
+
+The Vault has 5 independent locks. Each lock is derived from a known benchmark and then changed, so it is credible but not memorised.
 
 | Lock | Task | Derived from | Category |
 |---|---|---|---|
@@ -45,7 +55,7 @@ The odds are pari-mutuel: all stakes of a market go into one pool, and the winne
 - The house seeds 2,000 Oats per market, and a stronger model gets a larger share. So every horse has odds before the first bet, and the favorite starts with the lowest odds.
 - The odds are dynamic: each bet on a horse lowers its odds and raises the odds of the others. The chart on the race page shows this as the chance to win over time.
 
-The finish order is: escaped horses by time, then the other horses by open locks, then by the time of their latest lock.
+The finish order is: the horses that solved the challenge by cost, the cheapest first. Then the other horses by progress, and the cheaper horse first on equal progress. The cost of a horse is what its model calls cost on OpenRouter.
 
 ## Built on Archil
 
@@ -62,7 +72,7 @@ derby/
     log.jsonl                   one line per agent step
     final.diff                  what the horse changed in its room
     room.tar.gz                 the final state of the room
-    result.json                 locks, steps, cost, time, finish position
+    result.json                 progress, steps, cost, time, finish position
 ```
 
 ## Architecture
@@ -92,12 +102,12 @@ flowchart LR
 ```
 
 - **Frontend.** A Vite app on Vercel. `/` is the race list (Popular and Latest), `/race/:id` is one race with the bets and the odds chart, `/arena` is where you enter your own OpenRouter model in an open race, `/leaderboard` ranks the players, and `/board` is the big screen. It reads Supabase directly and gets every change through Realtime.
-- **Runner.** A long-lived Node process on Railway. It owns the race: it forks the sandboxes, runs one agent loop per horse, checks the locks after every step and settles the bets. The models run outside the sandbox through OpenRouter. The runner executes their commands inside the fork.
+- **Runner.** A long-lived Node process on Railway. It owns the race: it forks the sandboxes, runs one agent loop per horse, checks the progress after every step and settles the bets. The models run outside the sandbox through OpenRouter. The runner executes their commands inside the fork.
 - **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet, a model entry and the payout each go through one Postgres function, so the Oats balances stay consistent.
 
 ## Fair play
 
-- **Hidden challenges.** Before and during a race, the audience and the model owners see only a category and one sentence per lock. The real task is generated at race start from a private pool with a fresh random seed. Nobody can train a model on the exact task.
+- **Hidden challenges.** Before and during a race, the audience and the model owners see only a category and one sentence per task. The real task is generated at race start from a private pool with a fresh random seed. Nobody can train a model on the exact task.
 - **Open afterwards.** The seed is published when the race is settled. With it, anyone can rebuild the room and check the result.
 - **The checker is out of reach.** The runner runs its own copy of the checker. An agent that edits the checker in its room changes nothing. The checker stores only hashes of the answers.
 - **Equal limits.** Every horse gets the same prompt, the same sandbox, the same 3 minutes, the same step limit and the same token budget. This includes the models that players enter.
@@ -175,9 +185,11 @@ The challenge pool (generators, checkers and answers) is private and is not in t
 
 - [x] Workspace scaffold: frontend routes, runner health endpoint, shared types
 - [x] Database schema with row level security
-- [ ] One agent in one sandbox, end to end
-- [ ] A full race with parallel horses and a finish order
-- [ ] Live board
-- [ ] Betting and payouts
-- [ ] Enter your own model
-- [ ] Google login
+- [x] One agent in one sandbox, end to end
+- [x] A full race with parallel horses and a finish order (The Vault, with real models)
+- [x] Live board
+- [x] Betting and payouts
+- [x] Google login
+- [ ] Enter your own model (the entry works, no race has run with a player's model yet)
+- [ ] The lowest cost wins, with live progress, in the runner
+- [ ] The Cube and The Rover

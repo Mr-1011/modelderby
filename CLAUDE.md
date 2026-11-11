@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Model Derby (domain modelderby.com) is a live model benchmark that the audience can bet on. 6 to 8 LLM agents ("horses") race through the same escape room: 5 locks in a sandbox file system. Each horse runs in its own Archil sandbox. The audience bets Oats (play credits, no real money) on Win and Place from their phones while the race runs. Built at the Archil hackathon on 2026-11-10.
+Model Derby (domain modelderby.com) is a live model benchmark that the audience can bet on. 6 to 8 LLM agents ("horses") race through the same challenge (a "room") in a sandbox file system: a Rubik's cube or a warehouse rover with a command line tool, or the Vault with 5 locks. The horse that solves the room at the lowest cost wins, not the fastest. Each horse runs in its own Archil sandbox. The audience bets Oats (play credits, no real money) on Win and Place from their phones while the race runs. Built at the Archil hackathon on 2026-11-10.
 
 Spec and locked decisions: https://app.notion.com/p/Agent-Derby-Brief-Archil-Hackathon-4147918a03d28195b7feef87143f0455
 
@@ -82,7 +82,7 @@ There is no linter. The tests are small and run alone:
 
 ```
 node --test shared/src/odds.test.ts      # the odds maths
-node --test backend/src/finish.test.ts   # the finish order
+node --test shared/src/finish.test.ts    # the finish order
 # From backend/: the betting functions, on the hosted database, in a transaction that rolls back.
 PGPASSWORD=$SUPABASE_DB_PASSWORD psql "host=aws-1-us-west-1.pooler.supabase.com port=5432 user=postgres.kqpkcmcehcdipshlirzi dbname=postgres sslmode=require" -v ON_ERROR_STOP=1 -f supabase/test_bets.sql
 ```
@@ -98,6 +98,14 @@ The three parts talk through Supabase:
 The product model: one race is one "challenge" for the player, with a room, a lineup and two markets (Win and Place). A player enters a model as an OpenRouter model id only (`enter_model`). There are no custom endpoints and no API keys of players: every model runs on our OpenRouter key, so `horse_secrets` is not in use and the frontend does not call the runner.
 
 The start rules (`migrations/20261110210000_start_rules.sql`, they replace the pool and countdown rule of the spec): the runner starts only a race with `races.ready = true`. The database sets `ready` when the first player bets or enters a model, and it then gives the race a countdown of at least 60 seconds. So a race with `ready = false` waits, also after its countdown, and no race runs without a player. An admin (a row in `admins`, added by SQL with the service role) starts a race in 20 seconds with `start_race`. A player bets on one horse per race, on Win, on Place or on both.
+
+The race rules (Notion, locked on 2026-11-10 at 20:15 PT, they replace the "first escape wins" rule of the spec):
+
+- The winner is the horse that solves the room inside the time limit at the lowest cost. The cost is the sum of the OpenRouter usage of the horse (`entries.cost_usd`), and there is no budget cap. `finishOrder` in `shared/src/finish.ts` is the one definition of the order, for the runner and for the live standing on the screens: the finishers by cost, then the other horses by progress, and the cheaper horse first on equal progress. `settle_race` pays from `entries.finish_pos` and refunds a market when the two horses on a paying border have the same progress and the same cost.
+- Betting closes at the first finish. The race goes on until every horse has finished or the time limit ends.
+- Each room has a deterministic checker with no LLM judge. Its last lines are `PROGRESS <0 to 100>` and optionally `VIEW <one line>`. The runner runs its own copy after each command and on a 3 s timer, and writes `entries.progress` and `entries.view`. The view is a text picture for the screens: the 54 stickers of the cube (faces U, R, F, D, L, B), or the rows of the rover map joined with `/`. The Vault checker prints one line per lock, and its progress is 20 per open lock.
+- A room is a folder in `pool/` with `setup.py --seed`, `check.sh` and `solve.py`. The setup installs the command line tool of the room (`cube`, `robot`) and writes `/room/TASK.md`. The state of a room is a log of commands, and the checker replays that log from the seed, so an edit of a state file changes nothing.
+- `LIVE_ELIMINATION` (runner variable, off by default): a horse whose cost is above the cost of the first finisher gets the state `out` and stops.
 
 Rules that hold across files:
 
