@@ -11,8 +11,8 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 ## How a race works
 
 1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model for the next race.
-2. **Betting opens.** The big screen shows a QR code. You scan it, sign in with Google and get 1,000 Oats. You bet on Win or on Place.
-3. **The start.** The race starts when the pool reaches 10,000 Oats or when a 60-second countdown ends.
+2. **Betting opens.** The big screen shows a QR code. You scan it, sign in with Google and get 1,000 Oats. You pick one horse per race and bet on it to Win, to Place, or both.
+3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of at least 60 seconds, so other players can get in. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
 4. **The race.** Each horse gets an identical copy of the room and 3 minutes. Betting stays open and the odds move with every bet.
 5. **The finish.** The first horse that opens all 5 locks wins, and betting closes at that moment. The other horses race on for Place. If no horse escapes in 3 minutes, the horse with the most open locks wins.
 6. **The payout.** Winning bets are paid in Oats. The board shows the finish order, the changes the winner made in its room, and the leaderboard.
