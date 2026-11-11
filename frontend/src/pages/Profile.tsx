@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import Rider from '../components/Rider'
 import { grass } from '../components/Track'
-import { setProfile, usePlayer, useSession } from '../lib/queries'
+import { setProfile, signOut, usePlayer, useSession } from '../lib/queries'
 import { PARTS, riderOf } from '../lib/rider'
 
 const STEP = 'grid size-12 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none'
@@ -21,7 +21,7 @@ function Editor({ player }: { player: Player }) {
 
   return (
     <form
-      className="grid gap-6 sm:grid-cols-2"
+      className="gap-6 sm:grid sm:grid-cols-2"
       onSubmit={(event) => {
         event.preventDefault()
         setBusy(true)
@@ -33,7 +33,11 @@ function Editor({ player }: { player: Player }) {
           .finally(() => setBusy(false))
       }}
     >
-      <div className="grid place-items-center border-2 border-accent p-6" style={grass(px)}>
+      {/* On a phone, the rider stays below the header, so the player sees each change. */}
+      <div
+        className="sticky top-[calc(env(safe-area-inset-top)+60px)] z-1 mb-6 grid place-items-center border-2 border-accent p-3 sm:static sm:mb-0 sm:p-6"
+        style={grass(px)}
+      >
         <Rider rider={rider} scale={px} />
       </div>
       <div>
@@ -79,6 +83,10 @@ function Editor({ player }: { player: Player }) {
             {error}
           </p>
         )}
+        {/* On a wide screen, the account menu has the log out. */}
+        <button type="button" onClick={signOut} className="mt-3 h-12 w-full border-2 border-line font-pixel text-[30px] leading-none text-muted lg:hidden">
+          Log out
+        </button>
       </div>
     </form>
   )

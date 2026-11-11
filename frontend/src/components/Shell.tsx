@@ -9,7 +9,7 @@ import SignInLink from './SignInLink'
 import { grass } from './Track'
 
 const TAB =
-  'grid h-14 place-items-center font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:px-5 lg:text-[30px]'
+  'grid h-14 grow place-items-center px-2 font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:grow-0 lg:px-5 lg:text-[30px]'
 
 // The header with the account and the main pages, the same on each page. Only the board has its own header.
 const ITEM = 'block h-12 w-full px-4 text-left font-pixel text-[30px] leading-[48px] hover:bg-accent hover:text-on-accent'
@@ -26,7 +26,7 @@ export default function Shell() {
             {APP_NAME}
           </Link>
           {/* One nav: a bar at the bottom of a phone, and a part of the header on a wide screen. */}
-          <nav className="fixed inset-x-0 bottom-0 grid grid-cols-3 border-t-4 border-text bg-bg pb-[env(safe-area-inset-bottom)] lg:static lg:flex lg:border-0 lg:pb-0">
+          <nav className="fixed inset-x-0 bottom-0 flex border-t-4 border-text bg-bg pb-[env(safe-area-inset-bottom)] lg:static lg:border-0 lg:pb-0">
             <NavLink to="/" className={TAB}>
               Races
             </NavLink>
@@ -36,6 +36,10 @@ export default function Shell() {
             <NavLink to="/leaderboard" className={TAB}>
               Leaderboard
             </NavLink>
+            {/* On a phone, the profile is a tab. On a wide screen, the account menu has it. */}
+            <NavLink to="/profile" className={`${TAB} lg:hidden`}>
+              Profile
+            </NavLink>
           </nav>
           <div className="ml-auto flex items-center gap-4">
             {session === null && <SignInLink />}
@@ -44,7 +48,7 @@ export default function Shell() {
                 <span className="whitespace-nowrap font-pixel text-[22.5px] leading-none text-accent lg:text-[30px]">
                   {oats(player.credits)} Credits
                 </span>
-                <div className="relative" onKeyDown={(event) => event.key === 'Escape' && setMenu(false)}>
+                <div className="relative hidden lg:block" onKeyDown={(event) => event.key === 'Escape' && setMenu(false)}>
                   <button
                     aria-label="Account"
                     aria-expanded={menu}
