@@ -1,5 +1,6 @@
-import { APP_NAME } from '@horserace/shared'
+import { APP_NAME, finishOrder } from '@horserace/shared'
 import { useEffect, useRef, useState } from 'react'
+import RoomView from '../components/RoomView'
 import Track, { at, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
@@ -12,7 +13,7 @@ const W = 1920
 const H = 1080
 const LANES_H = 704
 const RAIL_H = 28
-const COLUMNS = 'grid grid-cols-[56px_380px_1fr_132px_132px] gap-x-5'
+const COLUMNS = 'grid grid-cols-[56px_380px_1fr_120px_120px_120px] gap-x-5'
 
 function useFit() {
   const [scale, setScale] = useState(1)
@@ -34,16 +35,17 @@ function useNow() {
   return now
 }
 
-// One line of race commentary: the latest lock that a horse opened.
+// One line of race commentary: the latest mark that a horse passed.
 function useCommentary(lanes: RaceView['lanes']) {
   const [line, setLine] = useState('')
   const seen = useRef<Record<string, number>>({})
   useEffect(() => {
     for (const { horse, entry } of lanes) {
-      const n = entry.locks_open
-      if (n > (seen.current[horse.id] ?? 0))
-        setLine(n === 5 ? `${horse.name} escapes the room` : `${horse.name} has ${n} ${n === 1 ? 'lock' : 'locks'} open`)
-      seen.current[horse.id] = n
+      const [was, is] = [seen.current[horse.id] ?? 0, entry.progress]
+      if (is === 100 && was < 100) setLine(`${horse.name} finishes for ${usd(entry.cost_usd)}`)
+      else if (is > 80 && was <= 80) setLine(`${horse.name} is about to solve it`)
+      else if (Math.floor(is / 20) > Math.floor(was / 20)) setLine(`${horse.name} is at ${Math.round(is)}%`)
+      seen.current[horse.id] = is
     }
   }, [lanes])
   return line
@@ -60,6 +62,8 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
   const px = Math.floor(laneH / SPRITE_H) + 1
   const spriteW = SPRITE_W * px
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
+  // The horse that wins if the race ends now.
+  const leader = finishOrder(lanes.map((lane) => lane.entry))[0]
 
   const status = statusOf(race, now, winner?.horse.name)
 
@@ -94,13 +98,14 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
             {[1, 2, 3, 4, 5].map((n) => (
               <span
                 key={n}
-                className="absolute bottom-0 w-8 text-center"
+                className="absolute bottom-0 flex w-8 justify-center"
                 style={n === 5 ? { right: 0 } : { left: `calc(${at(n, spriteW)} + ${spriteW - 14}px)` }}
               >
-                {n}
+                {race.task === 'vault' ? n : n * 20}
               </span>
             ))}
           </div>
+          <span className="text-right">Cost</span>
           <span className="text-right">Win</span>
           <span className="text-right">Place</span>
         </div>
@@ -120,14 +125,20 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
                 >
                   {i + 1}
                 </span>
-                <div className="min-w-0">
-                  <p className="truncate font-pixel text-[45px] leading-none">{lane.horse.name}</p>
-                  <p className="mt-1.5 flex justify-between gap-4 text-[17px] text-muted">
-                    <span className="truncate">{lane.horse.model}</span>
-                    {lane.entry.cost_usd > 0 && <span>{usd(lane.entry.cost_usd)}</span>}
-                  </p>
+                <div className="flex min-w-0 items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate font-pixel text-[45px] leading-none">{lane.horse.name}</p>
+                    <p className="mt-1.5 truncate text-[17px] text-muted">{lane.horse.model}</p>
+                  </div>
+                  {lane.entry.view && <RoomView view={lane.entry.view} cell={6} />}
                 </div>
                 <Track lane={lane} px={px} settled={race.status === 'settled'} notes stripe={i} />
+                {/* The cost decides the race, so the cost of the leading finisher is orange. */}
+                <span
+                  className={`text-right font-pixel text-[45px] leading-none ${lane.entry.state === 'escaped' && lane.horse.id === leader ? 'text-accent' : ''}`}
+                >
+                  {lane.entry.cost_usd > 0 && usd(lane.entry.cost_usd)}
+                </span>
                 <span className="text-right font-pixel text-[45px] leading-none">{odds(lane.win)}</span>
                 <span className="text-right font-pixel text-[45px] leading-none text-muted">{odds(lane.place)}</span>
               </li>
@@ -141,13 +152,13 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
 
           {/* The start of a race: a large "Go" over the track for about one second. */}
           {race.status === 'running' && now - Date.parse(race.started_at!) < 1300 && (
-            <p className="pointer-events-none absolute inset-y-0 left-[456px] right-[304px] grid place-items-center font-pixel text-[420px] leading-none text-text motion-safe:animate-go">
+            <p className="pointer-events-none absolute inset-y-0 left-[456px] right-[420px] grid place-items-center font-pixel text-[420px] leading-none text-text motion-safe:animate-go">
               Go
             </p>
           )}
 
           {race.status === 'open' && (
-            <div className="absolute right-[364px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
+            <div className="absolute right-[480px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
               <p className="font-pixel text-[75px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
               <p className="mt-4 text-[26px] font-medium">{window.location.host}</p>
               <p className="mt-2 text-[20px] text-muted">Sign in with Google and get 1,000 Oats.</p>
@@ -156,17 +167,19 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
         </div>
 
         <footer className="mt-auto grid h-[112px] grid-cols-6 gap-5 border-t-4 border-text pt-4">
+          {/* The Vault has 5 locks. Each other challenge is one task, so it gets the room of 5. */}
           {challenges.map((challenge) => (
-            <div key={challenge.id}>
+            <div key={challenge.id} className={challenges.length === 1 ? 'col-span-5 text-[20px]' : 'text-[15px]'}>
               <p className="font-pixel text-[30px] leading-none">
-                Lock {challenge.lock} <span className="text-muted">{challenge.category}</span>
+                {challenges.length === 1 ? (ROOMS[race.task] ?? race.task) : `Lock ${challenge.lock}`}{' '}
+                <span className="text-muted">{challenge.category}</span>
               </p>
-              <p className="mt-2 text-[15px] leading-snug text-muted">{challenge.public_blurb}</p>
+              <p className="mt-2 leading-snug text-muted">{challenge.public_blurb}</p>
             </div>
           ))}
-          <div>
-            <p className="font-pixel text-[30px] leading-none text-muted">Robotics</p>
-            <p className="mt-2 text-[15px] leading-snug text-muted">Coming soon.</p>
+          <div className="col-start-6">
+            <p className="font-pixel text-[30px] leading-none text-accent">Rules</p>
+            <p className="mt-2 text-[15px] leading-snug text-muted">The cheapest finisher wins. 3 minutes. Bets close at the first finish.</p>
           </div>
         </footer>
       </div>

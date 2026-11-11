@@ -1,4 +1,4 @@
-import type { Challenge, Entry, Horse, Race } from '@horserace/shared'
+import { type Challenge, type Entry, finishOrder, type Horse, type Race } from '@horserace/shared'
 import { useEffect, useState } from 'react'
 import { RACE_MS, type RaceView } from './race'
 
@@ -100,18 +100,13 @@ function step(sim: Sim, now: number): Sim {
   const escaped = entries.filter((entry) => entry.state === 'escaped')
   if (escaped.length && !race.betting_closed_at) race = { ...race, betting_closed_at: iso }
   if (escaped.length >= race.place_count || elapsed >= RACE_MS) {
-    // The finish order of the brief: escaped horses by time, then by open locks, then by the time of the latest lock.
-    const order = entries.slice().sort(
-      (a, b) =>
-        (a.solved_ms ?? Infinity) - (b.solved_ms ?? Infinity) || b.locks_open - a.locks_open ||
-        (a.last_lock_ms ?? Infinity) - (b.last_lock_ms ?? Infinity),
-    )
+    const order = finishOrder(entries)
     entries = entries.map((entry) => ({
-      ...entry, state: entry.state === 'running' ? 'timeout' : entry.state, finish_pos: order.indexOf(entry) + 1,
+      ...entry, state: entry.state === 'running' ? 'timeout' : entry.state, finish_pos: order.indexOf(entry.horse_id) + 1,
     }))
     race = {
       ...race, status: 'settled', ended_at: iso, betting_closed_at: race.betting_closed_at ?? iso,
-      winner_horse: order[0].horse_id, place_horses: order.slice(0, race.place_count).map((entry) => entry.horse_id),
+      winner_horse: order[0], place_horses: order.slice(0, race.place_count),
     }
   }
   return { race, entries, stakes, next }
