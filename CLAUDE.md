@@ -61,13 +61,20 @@ A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. Th
 yes n | supabase config push --agent no   # one "n" for each service that has a diff
 ```
 
-The runner image is the `Dockerfile` at the repo root, and the build context is the repo root. The Railway project does not exist yet.
+The runner image is the `Dockerfile` at the repo root, and the build context is the repo root. The runner is live on Railway: project `modelderby` (ID `e405b04d-2041-4cd2-9565-69ff387598cf`), environment `production`, service `runner`, region `sfo`, one replica, health check `/health`. Railway builds the `Dockerfile` with no config file. The service variables are `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `ARCHIL_API_KEY` and `ARCHIL_REGION`. Deploy only between races, because a restart cuts a running race short:
 
-The frontend is live at https://horserace-snowy.vercel.app. The Vercel project is `horserace` in the team `fluid-labs`, with root directory `frontend`. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
+```
+npx -y @railway/cli up --ci --service runner --environment production --project e405b04d-2041-4cd2-9565-69ff387598cf
+npx -y @railway/cli logs --service runner --lines 100
+```
+
+The frontend is live at https://www.modelderby.com (`modelderby.com` redirects to it, and https://horserace-snowy.vercel.app also works). The Vercel project is `modelderby` in the team `fluid-labs`, with root directory `frontend`. Its variables are `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_GOOGLE_CLIENT_ID`. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
 
 ```
 pnpm dlx vercel deploy --prod --scope fluid-labs
 ```
+
+Both CLIs upload the working directory, with the uncommitted work of the other agents. To deploy one commit, export it and deploy from the copy: `git archive HEAD | tar -x -C <dir>`, then copy `.vercel/` into it for Vercel.
 
 `vercel link` appends `.env*` to `.gitignore` and writes a root `.env.local`. Undo both, because that line hides the `.env.example` files.
 
@@ -99,7 +106,7 @@ Rules that hold across files:
 - The spec puts `endpoint_url` in `horses`. Here it is in `horse_secrets`, and `api_key` is optional, so no client can read the endpoint of a submitted horse.
 - `shared/src/types.ts` is handwritten. Update it when the schema changes.
 - Node runs the backend `.ts` files directly, and `shared` is imported as source. So `backend/` and `shared/` can use only erasable TypeScript syntax (no enums, no parameter properties), and a relative import needs the `.ts` extension.
-- The public name is Model Derby (decided on 2026-11-10, before it was Agent Derby). It is `APP_NAME` in `shared/src/index.ts`, and the static tags in `frontend/index.html` also hold it, because a link preview does not run JavaScript. Do not hardcode the name in another place. `horserace` is only the name of the repo, the packages and the hosted projects. Never show it to a user.
+- The public name is Model Derby (decided on 2026-11-10, before it was Agent Derby). It is `APP_NAME` in `shared/src/index.ts`, and the static tags in `frontend/index.html` also hold it, because a link preview does not run JavaScript. Do not hardcode the name in another place. The GitHub repo (`Mr-1011/modelderby`) and the Vercel and Railway projects are named `modelderby`. `horserace` is only the name of the packages, the Supabase project and the Google Cloud project. Never show it to a user.
 - The database column is `players.credits`, but the UI always says "Oats".
 - All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
 - Odds are pari-mutuel and are computed on read from `bets` with the maths in `shared/src/odds.ts`: all stakes of a market are one pool, so the odds of a horse fall when more Oats are on it. `open_race` and `enter_model` add a house seed of `horses.seed_weight` x 100 Oats per market (bets with `player_id` null), so each horse has odds before the first bet and a strong model starts as the favorite. The view `bet_totals` has the stakes per horse. The odds chart is computed from `bets` too (`winChanceHistory`), so nothing writes `odds_snapshots`.
@@ -112,9 +119,9 @@ Login must not redirect through Supabase. Do not use `supabase.auth.signInWithOA
 - Use Google Identity Services in the browser. Load `https://accounts.google.com/gsi/client`, call `google.accounts.id.initialize({ client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID, nonce: hashedNonce, callback })` and show the button with `google.accounts.id.renderButton`. Google draws this button. A custom button cannot start the flow.
 - In the callback, call `supabase.auth.signInWithIdToken({ provider: 'google', token: response.credential, nonce })`.
 - The nonce is a random string. Google gets its SHA-256 hash as a hex string. Supabase gets the raw string.
-- The OAuth client is "Agent Derby web" in the Google Cloud project `horserace-514403` (organization fluidlabs.co). No client secret is stored, because this flow does not need one.
-- Google accepts the button only on the origins in the client: `http://localhost:5173`, `http://localhost` and `https://horserace-snowy.vercel.app`. Add each new origin (the final domain) in the Google Cloud console under Google Auth Platform, Clients.
-- The Google app is in "Testing", so only test users can log in. Add test users under Google Auth Platform, Audience. "Publish app" needs a home page and a privacy policy link on the final domain.
+- The OAuth client is "Model Derby web" in the Google Cloud project `horserace-514403` (organization fluidlabs.co). No client secret is stored, because this flow does not need one.
+- Google accepts the button only on the origins in the client: `http://localhost:5173`, `http://localhost`, `https://www.modelderby.com`, `https://modelderby.com` and `https://horserace-snowy.vercel.app`. Add each new origin in the Google Cloud console under Google Auth Platform, Clients.
+- The Google app is in "Testing", so only test users can log in. Add test users under Google Auth Platform, Audience. The branding has the app name and the home page `https://www.modelderby.com`. "Publish app" also needs a privacy policy link on that domain, and the logo needs a square image of 120x120 px.
 - `[auth.external.google]` in `backend/supabase/config.toml` holds the client ID. The hosted project gets it with `supabase config push`.
 
 ## UI rules
