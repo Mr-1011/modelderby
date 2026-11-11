@@ -274,16 +274,18 @@ async function finish(race: number, lanes: Lane[]) {
 }
 
 async function tick() {
-  const open = (await must(
-    db.from('races').select('*').eq('status', 'open').order('countdown_ends_at'),
-  )) as Race[]
+  const open = (await must(db.from('races').select('*').eq('status', 'open'))) as Race[]
+  // The countdown of a race that waits for its first player can be in the past, so a new race counts from now.
   let latest = Math.max(0, ...open.map((race) => Date.parse(race.countdown_ends_at!)))
   for (let n = open.length; n < OPEN_RACES; n++) {
-    latest = Math.max(Date.now() + 3 * MINUTE, latest + 6 * MINUTE)
+    latest = Math.max(Date.now(), latest) + 6 * MINUTE
     await must(db.rpc('open_race', { p_task: 'vault', p_countdown_ends_at: new Date(latest).toISOString() }))
   }
+  // Only a ready race starts: the database sets ready at the first bet, the first model entry or an admin start.
   // The room build takes about 15 s, so it starts before the countdown ends.
-  const due = open[0]
+  const [due] = (await must(
+    db.from('races').select('*').eq('status', 'open').eq('ready', true).order('countdown_ends_at').limit(1),
+  )) as Race[]
   if (due && Date.parse(due.countdown_ends_at!) - BUILD_MS <= Date.now()) await runRace(due)
 }
 
