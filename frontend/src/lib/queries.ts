@@ -132,13 +132,7 @@ export function useBoardRaceId() {
 const ENTRY_COLUMNS =
   'race_id, horse_id, sandbox_id, state, locks_open, locks, steps, last_step, cost_usd, tokens, solved_ms, last_lock_ms, finish_pos'
 
-export type LiveRace = RaceView & {
-  bets: Bet[]
-  win: Stakes
-  place: Stakes
-  // Player id to nickname, for the players that entered a model in this race.
-  owners: Record<string, string>
-}
+export type LiveRace = RaceView & { bets: Bet[]; win: Stakes; place: Stakes }
 
 // One race, live. It is a RaceView, so the board and the phone view can render it.
 export function useRace(id: number | undefined) {
@@ -172,37 +166,29 @@ export function useRace(id: number | undefined) {
     // A fallback for a lost Realtime connection.
     refetchInterval: 10_000,
     queryFn: async (): Promise<LiveRace> => {
-      const race = await get<Race>(supabase.from('races').select('*').eq('id', id!).single())
-      const [rows, totals, bets, challenges] = await Promise.all([
+      // One round of requests, so a bet shows fast on a slow network.
+      const [race, rows, totals, bets, challenges] = await Promise.all([
+        get<Race>(supabase.from('races').select('*').eq('id', id!).single()),
         // Without the diff column: it is large, and this query runs many times in a race.
-        get<Omit<Entry, 'diff'>[]>(supabase.from('entries').select(ENTRY_COLUMNS).eq('race_id', id!)),
+        get<(Omit<Entry, 'diff'> & { horse: Horse })[]>(
+          supabase.from('entries').select(`${ENTRY_COLUMNS}, horse:horses(*)`).eq('race_id', id!),
+        ),
         get<BetTotal[]>(supabase.from('bet_totals').select('*').eq('race_id', id!)),
         // shortcut: PostgREST returns at most 1000 rows, so the chart and "your bets" miss later bets of a
         // race with more than 1000 bets. The odds and the pool come from bet_totals and stay exact. Page this
         // query if a race gets that many bets.
         get<Bet[]>(supabase.from('bets').select('*').eq('race_id', id!).order('created_at')),
-        get<Challenge[]>(supabase.from('challenges').select('*').eq('room', race.task).order('lock')),
+        get<Challenge[]>(supabase.from('challenges').select('*').order('lock')),
       ])
-      const horses = await get<Horse[]>(
-        supabase.from('horses').select('*').in('id', rows.map((row) => row.horse_id)),
-      )
-      const ownerIds = horses.flatMap((horse) => (horse.submitted_by ? [horse.submitted_by] : []))
-      const owners = ownerIds.length
-        ? await get<Player[]>(supabase.from('players').select('*').in('id', ownerIds))
-        : []
-
       const win = stakesOf(totals, 'win')
       const place = stakesOf(totals, 'place')
-      const lanes = horses
-        .map((horse) => {
-          const entry: Entry = { ...rows.find((row) => row.horse_id === horse.id)!, diff: null }
-          return {
-            horse,
-            entry,
-            win: win[horse.id] ? winOdds(win, horse.id) : 0,
-            place: place[horse.id] ? placeOdds(place, horse.id, rows.length, race.place_count) : 0,
-          }
-        })
+      const lanes = rows
+        .map(({ horse, ...entry }) => ({
+          horse,
+          entry: { ...entry, diff: null },
+          win: win[horse.id] ? winOdds(win, horse.id) : 0,
+          place: place[horse.id] ? placeOdds(place, horse.id, rows.length, race.place_count) : 0,
+        }))
         // The finish order after the race. Before it: the house horses, then the models of players.
         .sort(
           (a, b) =>
@@ -213,12 +199,11 @@ export function useRace(id: number | undefined) {
       return {
         race,
         lanes,
-        challenges,
+        challenges: challenges.filter((challenge) => challenge.room === race.task),
         pool: poolOf(totals),
         bets,
         win,
         place,
-        owners: Object.fromEntries(owners.map((owner) => [owner.id, owner.nickname])),
       }
     },
   })
