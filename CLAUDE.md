@@ -21,7 +21,7 @@ One git repo and one pnpm workspace with three packages:
 
 `README.md` is for public readers. Update it when setup, commands or behavior change.
 
-Several agents work in this repo at the same time. Stage only the files you changed, by name. Commit each finished unit of work as one small commit with a message like `feat: show live odds on the horse cards`.
+Several agents work in this repo at the same time. Stage only the files you changed, by name. Commit each finished unit of work as one small commit with a message like `feat: show live odds on the horse cards`. Never amend or rebase a commit, because another agent can push it at any time. Add a new commit instead. Run `git status -sb` before a commit to see if `main` is behind `origin/main`.
 
 ## Commands
 
