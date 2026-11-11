@@ -1,4 +1,4 @@
-import type { RaceEvent } from '@horserace/shared'
+import type { RaceEvent } from '@modelderby/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'

@@ -1,4 +1,4 @@
-import { APP_NAME, ROOMS as CHALLENGES, finishOrder } from '@horserace/shared'
+import { APP_NAME, ROOMS as CHALLENGES, finishOrder } from '@modelderby/shared'
 import { useEffect, useRef, useState } from 'react'
 import RoomView from '../components/RoomView'
 import Track, { at, Rail } from '../components/Track'

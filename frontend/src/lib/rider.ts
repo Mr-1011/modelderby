@@ -1,4 +1,4 @@
-import type { Player } from '@horserace/shared'
+import type { Player } from '@modelderby/shared'
 import { outline } from './sprite'
 
 // Pixel riders. A player builds a rider on the profile page, and it is the public icon of that player.

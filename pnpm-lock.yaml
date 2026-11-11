@@ -10,7 +10,7 @@ importers:
 
   backend:
     dependencies:
-      '@horserace/shared':
+      '@modelderby/shared':
         specifier: workspace:*
         version: link:../shared
       '@supabase/supabase-js':
@@ -29,7 +29,7 @@ importers:
 
   frontend:
     dependencies:
-      '@horserace/shared':
+      '@modelderby/shared':
         specifier: workspace:*
         version: link:../shared
       '@supabase/supabase-js':

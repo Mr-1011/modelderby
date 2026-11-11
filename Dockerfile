@@ -6,7 +6,7 @@ RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY shared ./shared
 COPY backend ./backend
-RUN pnpm install --frozen-lockfile --prod --filter horserace-backend...
+RUN pnpm install --frozen-lockfile --prod --filter modelderby-backend...
 ENV NODE_ENV=production
 USER node
 # Node runs the .ts files directly. Railway sets PORT.

@@ -1,4 +1,4 @@
-import { finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
+import { finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@modelderby/shared'
 import { type ReactNode, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Glyph from '../components/Glyph'

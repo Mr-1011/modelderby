@@ -1,5 +1,5 @@
-import { ROOMS as ALL } from '@horserace/shared'
-import type { Challenge, Entry, Horse, Race } from '@horserace/shared'
+import { ROOMS as ALL } from '@modelderby/shared'
+import type { Challenge, Entry, Horse, Race } from '@modelderby/shared'
 import { clock } from './format'
 
 // What the board and the phone show of one race.

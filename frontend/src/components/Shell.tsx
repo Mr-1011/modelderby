@@ -1,4 +1,4 @@
-import { APP_NAME } from '@horserace/shared'
+import { APP_NAME } from '@modelderby/shared'
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { oats } from '../lib/format'

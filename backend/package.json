@@ -1,5 +1,5 @@
 {
-  "name": "horserace-backend",
+  "name": "modelderby-backend",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "start": "node src/index.ts"
   },
   "dependencies": {
-    "@horserace/shared": "workspace:*",
+    "@modelderby/shared": "workspace:*",
     "@supabase/supabase-js": "^2.119.0",
     "disk": "^1.12.1"
   },

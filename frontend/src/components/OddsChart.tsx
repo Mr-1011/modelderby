@@ -1,4 +1,4 @@
-import { winChanceHistory } from '@horserace/shared'
+import { winChanceHistory } from '@modelderby/shared'
 import { useState } from 'react'
 import { odds } from '../lib/format'
 import type { LiveRace } from '../lib/queries'

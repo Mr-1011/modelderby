@@ -1,4 +1,4 @@
-import { APP_NAME } from '@horserace/shared'
+import { APP_NAME } from '@modelderby/shared'
 import type { ReactNode } from 'react'
 
 // The privacy policy and the terms. Google needs a link to both before the Google sign-in is open to everyone.

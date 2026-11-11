@@ -9,7 +9,7 @@ import {
   type Stakes,
   placeOdds,
   winOdds,
-} from '@horserace/shared'
+} from '@modelderby/shared'
 import type { Session } from '@supabase/supabase-js'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, useSyncExternalStore } from 'react'

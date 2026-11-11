@@ -1,5 +1,5 @@
 import { createServer } from 'node:http'
-import { APP_NAME } from '@horserace/shared'
+import { APP_NAME } from '@modelderby/shared'
 
 createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/health') {

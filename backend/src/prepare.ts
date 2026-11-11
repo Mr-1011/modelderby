@@ -3,7 +3,7 @@
 //   node --env-file=.env src/prepare.ts vault
 import { readFile } from 'node:fs/promises'
 import * as archil from 'disk'
-import { ROOMS } from '@horserace/shared'
+import { ROOMS } from '@modelderby/shared'
 
 let derby: Promise<archil.Disk> | undefined
 

@@ -2,8 +2,8 @@
 import { randomBytes } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Sandbox } from 'disk'
-import { finishOrder, ROOMS } from '@horserace/shared'
-import type { Entry, Horse, Race } from '@horserace/shared'
+import { finishOrder, ROOMS } from '@modelderby/shared'
+import type { Entry, Horse, Race } from '@modelderby/shared'
 import { buildBase, disk, remove, removeLeftovers, runCheck } from './prepare.ts'
 
 const RACE_MS = 180_000

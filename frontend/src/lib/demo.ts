@@ -1,4 +1,4 @@
-import { type Challenge, type Entry, finishOrder, type Horse, type Race } from '@horserace/shared'
+import { type Challenge, type Entry, finishOrder, type Horse, type Race } from '@modelderby/shared'
 import { useEffect, useState } from 'react'
 import { RACE_MS, type RaceView } from './race'
 

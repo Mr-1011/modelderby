@@ -1,4 +1,4 @@
-import type { Player } from '@horserace/shared'
+import type { Player } from '@modelderby/shared'
 import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'

@@ -1,4 +1,4 @@
-import { APP_NAME } from '@horserace/shared'
+import { APP_NAME } from '@modelderby/shared'
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import GoogleButton from '../components/GoogleButton'
 import Horse from '../components/Horse'
