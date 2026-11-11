@@ -68,8 +68,9 @@ if (import.meta.main) {
   console.log(`pushed pool/${room} to the disk ${d.name}`)
 
   // The gate: the progress of a fresh room is below 100, and the reference solution brings it to 100.
-  const { base, check } = await buildBase(`derby-rtest-${room}-base`, room, 'test')
-  const fork = await base.fork({ name: `derby-rtest-${room}-fork` })
+  // These names do not start with "derby-r", so a runner that starts at the same time leaves them alone.
+  const { base, check } = await buildBase(`derby-gate-${room}-base`, room, 'test')
+  const fork = await base.fork({ name: `derby-gate-${room}-fork` })
   const fresh = await runCheck(fork, check)
   const solve = await fork.exec('python3 -c "$SOLVE"', {
     env: { SOLVE: new TextDecoder().decode(await d.getObject(`rooms/${room}/solve.py`)) },
