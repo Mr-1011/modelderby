@@ -26,7 +26,7 @@ export default function Home() {
             key={name}
             aria-pressed={tab === name}
             onClick={() => setTab(name)}
-            className="h-11 border-2 border-text px-4 font-pixel text-[30px] leading-none aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent"
+            className="h-11 border-2 border-text px-4 font-pixel text-[30px] leading-none hover:border-accent hover:text-accent aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent"
           >
             {name}
           </button>

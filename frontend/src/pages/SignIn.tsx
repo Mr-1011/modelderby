@@ -13,7 +13,7 @@ export default function SignIn() {
   if (session) return <Navigate to={from} replace />
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
-      <Link to="/" className="font-pixel text-[30px] leading-none">
+      <Link to="/" className="font-pixel text-[30px] leading-none hover:text-accent">
         {APP_NAME}
       </Link>
       <div className="mt-4 border-2 border-accent bg-panel">
@@ -33,7 +33,7 @@ export default function SignIn() {
           <p className="mt-4 text-[13px] text-muted">New here? The same button makes your account.</p>
         </div>
       </div>
-      <Link to={from} className="mt-6 text-[15px] underline underline-offset-4">
+      <Link to={from} className="mt-6 text-[15px] underline underline-offset-4 hover:text-accent">
         Back
       </Link>
     </main>

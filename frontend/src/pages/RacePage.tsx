@@ -18,7 +18,7 @@ function AddHorse({ race, signedIn }: { race: number; signedIn: boolean }) {
     <li className="min-w-0">
       <button
         onClick={() => (signedIn ? setOpen(true) : navigate('/signin', { state: { from: pathname } }))}
-        className="grid h-full min-h-40 w-full place-content-center justify-items-center gap-2 border-2 border-dashed border-line text-muted hover:border-text hover:text-text"
+        className="grid h-full min-h-40 w-full place-content-center justify-items-center gap-2 border-2 border-dashed border-line text-muted hover:border-accent hover:text-accent"
       >
         <span className="font-pixel text-[45px] leading-none">+</span>
         <span className="font-pixel text-[22.5px] leading-none lg:text-[30px]">Add a horse</span>

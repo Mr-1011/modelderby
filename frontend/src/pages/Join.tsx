@@ -20,7 +20,7 @@ const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)]
 const randomName = () => `${pick(FIRST)} ${pick(LAST)}`
 const randomRider = () => PARTS.map((part) => Math.floor(Math.random() * part.count))
 
-const STEP = 'grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none'
+const STEP = 'grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent'
 
 // The page behind the QR codes: a guest account without Google, with a rider name and a rider, as on the profile page.
 // /join?race=7 sends the new player to race 7.
@@ -41,7 +41,7 @@ export default function Join() {
   if (session === undefined) return null
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
-      <Link to="/" className="font-pixel text-[30px] leading-none">
+      <Link to="/" className="font-pixel text-[30px] leading-none hover:text-accent">
         {APP_NAME}
       </Link>
       <form
@@ -75,7 +75,7 @@ export default function Join() {
             <button
               type="button"
               onClick={() => setName(randomName())}
-              className="h-12 shrink-0 border-2 border-text px-3 font-pixel text-[30px] leading-none"
+              className="h-12 shrink-0 border-2 border-text px-3 font-pixel text-[30px] leading-none hover:border-accent hover:text-accent"
             >
               Roll
             </button>
@@ -97,13 +97,13 @@ export default function Join() {
           <button
             type="button"
             onClick={() => setRider(randomRider())}
-            className="mt-2 h-10 w-full border-2 border-text font-pixel text-[30px] leading-none"
+            className="mt-2 h-10 w-full border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent"
           >
             Randomize
           </button>
           <button
             disabled={busy || !name.trim()}
-            className="mt-4 h-12 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted"
+            className="mt-4 h-12 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted"
           >
             Create
           </button>
@@ -117,7 +117,7 @@ export default function Join() {
           </p>
         </div>
       </form>
-      <Link to="/signin" state={{ from: to }} className="mt-6 text-[15px] underline underline-offset-4">
+      <Link to="/signin" state={{ from: to }} className="mt-6 text-[15px] underline underline-offset-4 hover:text-accent">
         Sign in with Google
       </Link>
     </main>

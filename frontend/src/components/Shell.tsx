@@ -9,7 +9,7 @@ import SignInLink from './SignInLink'
 import { grass } from './Track'
 
 const TAB =
-  'grid h-14 grow place-items-center px-1 font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:grow-0 lg:px-5 lg:text-[30px]'
+  'grid h-14 grow place-items-center px-1 font-pixel text-[22.5px] leading-none text-muted hover:text-text aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:grow-0 lg:px-5 lg:text-[30px]'
 
 // The header with the account and the main pages, the same on each page. Only the board has its own header.
 const ITEM = 'block h-12 w-full px-4 text-left font-pixel text-[30px] leading-[48px] hover:bg-accent hover:text-on-accent'
@@ -22,7 +22,7 @@ export default function Shell() {
     <>
       <header className="sticky top-0 z-10 border-b-4 border-text bg-bg pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
-          <Link to="/" className="whitespace-nowrap font-pixel text-[30px] leading-none">
+          <Link to="/" className="whitespace-nowrap font-pixel text-[30px] leading-none hover:text-accent">
             {APP_NAME}
           </Link>
           {/* One nav: a bar at the bottom of a phone, and a part of the header on a wide screen. */}
@@ -53,7 +53,7 @@ export default function Shell() {
                     aria-label="Account"
                     aria-expanded={menu}
                     onClick={() => setMenu(!menu)}
-                    className="block border-2 border-accent"
+                    className="block border-2 border-accent hover:border-text"
                     style={grass(2)}
                   >
                     <Rider rider={riderOf(player)} scale={2} />

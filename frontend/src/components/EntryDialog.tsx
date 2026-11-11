@@ -19,7 +19,7 @@ const ROWS = 100
 
 const FIELD = 'h-12 w-full min-w-0 border-2 border-text bg-bg px-3 text-[16px] placeholder:text-muted disabled:border-line'
 const FILTER =
-  'h-9 border-2 border-line px-3 text-[13px] aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent'
+  'h-9 border-2 border-line px-3 text-[13px] hover:border-accent hover:text-accent aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent'
 
 // "anthropic/claude-haiku-5.5" -> "anthropic"
 const makerOf = (model: Model) => model.id.split('/')[0]
@@ -70,7 +70,7 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
           <button
             onClick={onClose}
             aria-label="Close"
-            className="grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none"
+            className="grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent"
           >
             X
           </button>
@@ -116,7 +116,7 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
                   setModel(option)
                   setName(shortName(option).slice(0, 24))
                 }}
-                className="group flex w-full items-center justify-between gap-4 border-b-2 border-line px-4 py-3 text-left aria-pressed:bg-accent aria-pressed:text-on-accent"
+                className="group flex w-full items-center justify-between gap-4 border-b-2 border-line px-4 py-3 text-left hover:bg-panel aria-pressed:bg-accent aria-pressed:text-on-accent"
               >
                 <span className="min-w-0">
                   <span className="block truncate text-[15px] font-medium">{shortName(option)}</span>
@@ -162,7 +162,7 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
             />
             <button
               disabled={busy || !model}
-              className="h-12 shrink-0 bg-accent px-6 font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted"
+              className="h-12 shrink-0 bg-accent px-6 font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted"
             >
               Enter the race
             </button>

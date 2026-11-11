@@ -16,7 +16,7 @@ export default function FeaturedRace({ id, now }: { id: number; now: number }) {
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
   const status = statusOf(race, now, winner?.horse.name)
   return (
-    <Link to={`/race/${id}`} className="mt-4 block border-2 border-accent bg-panel">
+    <Link to={`/race/${id}`} className="mt-4 block border-2 border-accent bg-panel hover:outline-2 hover:outline-accent">
       {/* On a wide screen the status is on the line of the title. On a phone it has its own row. */}
       <div className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 p-4 lg:grid-cols-[auto_1fr_auto] lg:items-baseline lg:p-6">
         <div className="lg:self-center">

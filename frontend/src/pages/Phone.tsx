@@ -16,8 +16,9 @@ export type Player = { nickname: string; credits: number }
 // payout is set when the race is settled. 0 is a lost bet.
 export type MyBet = { horse: string; market: Market; amount: number; payout?: number | null }
 
-const BUTTON = 'h-14 border-2 border-text font-pixel text-[30px] leading-none disabled:border-line disabled:text-muted'
-const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
+const BUTTON =
+  'h-14 border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent disabled:border-line disabled:text-muted aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent'
+const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted'
 
 // pays gives what a stake pays. It is less than stake x odds, because the stake moves the odds of its own pool.
 function BetSlip({
@@ -54,7 +55,7 @@ function BetSlip({
                 disabled={option > credits || option < 1}
                 aria-pressed={amount === option}
                 onClick={() => setAmount(option)}
-                className={`${BUTTON} ${amount === option ? 'border-accent bg-accent text-on-accent' : ''}`}
+                className={BUTTON}
               >
                 {i === 3 ? 'All in' : option}
               </button>
@@ -214,7 +215,7 @@ export function PhoneView({
                         key={market}
                         disabled={!open || (mine !== undefined && mine !== horse.id)}
                         onClick={() => (player ? setSlip({ horse: horse.id, market }) : navigate('/signin', { state: { from: pathname } }))}
-                        className={`h-16 border-2 leading-none ${staked ? 'border-accent' : 'border-text disabled:border-line disabled:text-muted'}`}
+                        className={`h-16 border-2 leading-none enabled:hover:border-accent enabled:hover:text-accent ${staked ? 'border-accent' : 'border-text disabled:border-line disabled:text-muted'}`}
                       >
                         <span className={`block truncate text-[12px] ${staked ? 'text-accent' : 'text-muted'}`}>
                           <span className="lg:hidden">{short}</span>

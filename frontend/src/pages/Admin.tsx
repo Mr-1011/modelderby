@@ -52,7 +52,7 @@ export default function Admin() {
                       (failure: Error) => setError(failure.message),
                     )
                   }
-                  className="h-12 shrink-0 bg-accent px-4 font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted"
+                  className="h-12 shrink-0 bg-accent px-4 font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted"
                 >
                   Start now
                 </button>

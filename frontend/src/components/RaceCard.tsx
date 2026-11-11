@@ -12,7 +12,7 @@ export default function RaceCard({ summary, now, children }: { summary: RaceSumm
   const settled = race.status === 'settled'
   const winner = horses.find((horse) => horse.id === race.winner_horse)
   return (
-    <li className="min-w-0 border-2 border-accent bg-panel">
+    <li className="min-w-0 border-2 border-accent bg-panel hover:outline-2 hover:outline-accent">
       <Link to={`/race/${race.id}`} className="block">
         <div className="grid place-items-center border-b-2 border-line bg-bg py-6">
           <Glyph name={race.task} px={5} />

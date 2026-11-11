@@ -154,6 +154,10 @@ button {
 
 /* A pressed button moves by one pixel step. In the base layer, so utilities can replace it. */
 @layer base {
+  /* The pointer shows what a player can click. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
   button:active:not(:disabled) {
     transform: translate(2px, 2px);
   }

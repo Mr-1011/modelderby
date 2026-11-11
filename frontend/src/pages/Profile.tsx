@@ -7,7 +7,7 @@ import { grass } from '../components/Track'
 import { setProfile, signOut, usePlayer, useSession } from '../lib/queries'
 import { PARTS, riderOf } from '../lib/rider'
 
-const STEP = 'grid size-12 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none'
+const STEP = 'grid size-12 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent'
 
 function Editor({ player }: { player: Player }) {
   const client = useQueryClient()
@@ -68,13 +68,13 @@ function Editor({ player }: { player: Player }) {
         <button
           type="button"
           onClick={() => setRider(PARTS.map((part) => Math.floor(Math.random() * part.count)))}
-          className="mt-6 h-12 w-full border-2 border-text font-pixel text-[30px] leading-none"
+          className="mt-6 h-12 w-full border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent"
         >
           Randomize
         </button>
         <button
           disabled={busy || !changed}
-          className="mt-3 h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted"
+          className="mt-3 h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted"
         >
           {changed ? 'Save' : 'Saved'}
         </button>
@@ -84,7 +84,7 @@ function Editor({ player }: { player: Player }) {
           </p>
         )}
         {/* On a wide screen, the account menu has the log out. */}
-        <button type="button" onClick={signOut} className="mt-3 h-12 w-full border-2 border-line font-pixel text-[30px] leading-none text-muted lg:hidden">
+        <button type="button" onClick={signOut} className="mt-3 h-12 w-full border-2 border-line font-pixel text-[30px] leading-none text-muted hover:border-accent hover:text-accent lg:hidden">
           Log out
         </button>
       </div>
