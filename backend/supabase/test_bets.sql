@@ -18,7 +18,7 @@ declare
   v_race bigint;
   v_horse text;
 begin
-  -- A new user gets 1,000 Oats. Two users with the same first name both get a row.
+  -- A new user gets 1,000 Credits. Two users with the same first name both get a row.
   assert (select count(*) from public.players where id in (a1, a2) and credits = 1000 and nickname = 'Ada') = 2, 'two players named Ada';
   assert (select nickname from public.players where id = '00000000-0000-0000-0000-0000000000a3') like 'player-%', 'fallback nickname';
 
@@ -27,7 +27,7 @@ begin
   from (values ('h1', 5), ('h2', 5), ('h3', 4), ('h4', 3), ('h5', 2), ('h6', 1)) as w (id, weight)
   where h.id = w.id;
 
-  -- A new race has the 6 house horses and a seed of 2,000 Oats per market.
+  -- A new race has the 6 house horses and a seed of 2,000 Credits per market.
   v_race := public.open_race('vault', now() + interval '10 minutes');
   assert (select count(*) from public.entries where race_id = v_race) = 6, '6 entries';
   assert (select sum(amount) from public.bets where race_id = v_race and market = 'win') = 2000, 'win seed';

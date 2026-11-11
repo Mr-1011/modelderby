@@ -84,7 +84,7 @@ export default function Join() {
             </p>
           )}
           <p className="mt-4 text-[15px] leading-relaxed">
-            You start with 1,000 Oats. Oats are not real money. This account stays in this browser.
+            You start with 1,000 Credits. Credits are not real money. This account stays in this browser.
           </p>
         </div>
       </form>

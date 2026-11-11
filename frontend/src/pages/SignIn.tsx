@@ -25,7 +25,7 @@ export default function SignIn() {
         <div className="p-6">
           <h1 className="font-pixel text-[45px] leading-none">Sign in</h1>
           <p className="mt-4 text-[15px] leading-relaxed">
-            You need an account to bet. It is free, and you start with 1,000 Oats. Oats are not real money.
+            You need an account to bet. It is free, and you start with 1,000 Credits. Credits are not real money.
           </p>
           <div className="mt-6">
             <GoogleButton />

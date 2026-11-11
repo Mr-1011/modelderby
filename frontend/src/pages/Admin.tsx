@@ -34,7 +34,7 @@ export default function Admin() {
                   Race {race.id} <span className="text-muted">{ROOMS[race.task] ?? race.task}</span>
                 </p>
                 <p className="mt-1 text-[14px] text-muted">
-                  {horses.length} horses, {oats(pool)} Oats,{' '}
+                  {horses.length} horses, {oats(pool)} Credits,{' '}
                   {race.status === 'running'
                     ? 'runs now'
                     : race.ready

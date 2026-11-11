@@ -6,7 +6,7 @@ import { useNow, useRaces } from '../lib/queries'
 const TABS = ['Popular', 'Latest'] as const
 
 // The race list, with one race large on top: a race that runs, or else the first race of the list.
-// Popular puts the races that a player can still bet on first, then the most Oats of players. Latest puts the newest first.
+// Popular puts the races that a player can still bet on first, then the most Credits of players. Latest puts the newest first.
 export default function Home() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Popular')
   const { data, error } = useRaces()

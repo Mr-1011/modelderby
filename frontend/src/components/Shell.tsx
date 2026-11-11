@@ -41,8 +41,9 @@ export default function Shell() {
             {session === null && <SignInLink />}
             {player && (
               <>
-                <span className="hidden max-w-40 truncate text-[14px] text-muted lg:block">{player.nickname}</span>
-                <span className="font-pixel text-[30px] leading-none text-accent">{oats(player.credits)} Oats</span>
+                <span className="whitespace-nowrap font-pixel text-[22.5px] leading-none text-accent lg:text-[30px]">
+                  {oats(player.credits)} Credits
+                </span>
                 <div className="relative" onKeyDown={(event) => event.key === 'Escape' && setMenu(false)}>
                   <button
                     aria-label="Account"

@@ -54,7 +54,7 @@ export default function RacePage() {
       <section className="*:max-w-md">
         {race.status === 'settled' && mine.length > 0 && (
           <p className="mt-8 bg-accent p-4 font-pixel text-[30px] leading-none text-on-accent">
-            {paid >= staked ? `You won ${oats(paid - staked)} Oats` : `You lost ${oats(staked - paid)} Oats`}
+            {paid >= staked ? `You won ${oats(paid - staked)} Credits` : `You lost ${oats(staked - paid)} Credits`}
           </p>
         )}
         {race.seed_revealed && <p className="mt-6 break-all text-[13px] text-muted">Seed of this race: {race.seed_revealed}</p>}

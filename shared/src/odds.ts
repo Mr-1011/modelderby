@@ -1,7 +1,7 @@
 // Pari-mutuel odds. All stakes of one market are one pool, and the winners share it.
-// So the odds of a horse fall when more Oats are on it. The house seed gives every horse odds before the first bet.
+// So the odds of a horse fall when more Credits are on it. The house seed gives every horse odds before the first bet.
 
-// The Oats on each horse in one market, house seed included. Key = horse id.
+// The Credits on each horse in one market, house seed included. Key = horse id.
 export type Stakes = Record<string, number>
 
 const pool = (stakes: Stakes) => Object.values(stakes).reduce((sum, stake) => sum + stake, 0)

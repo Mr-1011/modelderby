@@ -61,10 +61,10 @@ function BetSlip({
             ))}
           </div>
           <button disabled={amount < 1 || amount > credits} onClick={() => onBet(amount)} className={`${PRIMARY} mt-3`}>
-            Bet {oats(amount)} Oats
+            Bet {oats(amount)} Credits
           </button>
           <p className="mt-3 text-[14px] text-muted">
-            Pays about {oats(pays(amount))} Oats. The odds move until betting closes.
+            Pays about {oats(pays(amount))} Credits. The odds move until betting closes.
           </p>
         </div>
       </div>
@@ -74,7 +74,7 @@ function BetSlip({
 
 // The race page without its data source: the live page and the demo both render it. It goes below the header of the Shell.
 // The page is open without an account: player is null then, and a tap on the odds leads to the sign-in page.
-// stakes are the Oats on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
+// stakes are the Credits on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
 // chart draws the odds chart. It gets the horse that the page highlights, and a function to set it.
 export function PhoneView({
   view, player, bets, onBet, stakes, chart,
@@ -212,7 +212,7 @@ export function PhoneView({
         <h2 className="font-pixel text-[30px] leading-none">Your bets</h2>
         {bets.length === 0 && (
           <p className="mt-3 text-[15px] text-muted">
-            {player ? 'No bets yet. ' : 'Sign in to bet. You start with 1,000 Oats. '}
+            {player ? 'No bets yet. ' : 'Sign in to bet. You start with 1,000 Credits. '}
             Pick one horse and tap its odds. You bet on one horse per race.
           </p>
         )}
@@ -223,11 +223,11 @@ export function PhoneView({
                 {lanes.find((lane) => lane.horse.id === bet.horse)?.horse.name ?? bet.horse}, {bet.market === 'win' ? 'to win' : 'to place'}
               </span>
               {bet.payout == null ? (
-                <span className="shrink-0">{oats(bet.amount)} Oats</span>
+                <span className="shrink-0">{oats(bet.amount)} Credits</span>
               ) : bet.payout > 0 ? (
-                <span className="shrink-0 text-accent">Won {oats(bet.payout)} Oats</span>
+                <span className="shrink-0 text-accent">Won {oats(bet.payout)} Credits</span>
               ) : (
-                <span className="shrink-0 text-muted">Lost {oats(bet.amount)} Oats</span>
+                <span className="shrink-0 text-muted">Lost {oats(bet.amount)} Credits</span>
               )}
             </li>
           ))}

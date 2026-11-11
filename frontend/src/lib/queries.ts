@@ -39,7 +39,7 @@ export function useSession() {
 
 export const signOut = () => supabase.auth.signOut({ scope: 'local' })
 
-// A guest account for a player who scans a QR code: an anonymous user with a rider name and 1,000 Oats.
+// A guest account for a player who scans a QR code: an anonymous user with a rider name and 1,000 Credits.
 // The session lives only in this browser, so the account is gone when the browser forgets it.
 export async function joinAsGuest(name: string) {
   const { error } = await supabase.auth.signInAnonymously({ options: { data: { name } } })
@@ -81,7 +81,7 @@ export async function setProfile(nickname: string, rider: number[]) {
 
 export type Standing = Player & { invested: number }
 
-// The 10 players with the most Oats. invested is the Oats of a player in bets on races that are not settled.
+// The 10 players with the most Credits. invested is the Credits of a player in bets on races that are not settled.
 export function useLeaderboard() {
   return useQuery({
     queryKey: ['leaderboard'],
@@ -108,7 +108,7 @@ type BetTotal = { race_id: number; market: string; outcome: string; staked: numb
 const stakesOf = (totals: BetTotal[], market: string): Stakes =>
   Object.fromEntries(totals.filter((total) => total.market === market).map((total) => [total.outcome, total.staked]))
 
-// The Oats of players in both markets. The house seed does not count.
+// The Credits of players in both markets. The house seed does not count.
 const poolOf = (totals: BetTotal[]) => totals.reduce((sum, total) => sum + total.player_staked, 0)
 
 export type RaceSummary = { race: Race; horses: Horse[]; pool: number; favorite?: Horse; favoriteOdds: number }

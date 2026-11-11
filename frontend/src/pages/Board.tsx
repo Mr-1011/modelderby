@@ -82,7 +82,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
           </div>
           <div className="flex items-baseline gap-14">
             <p className="font-pixel text-[45px] leading-none text-muted">
-              Pool <span className="text-text">{oats(pool)} Oats</span>
+              Pool <span className="text-text">{oats(pool)} Credits</span>
             </p>
             <p className="font-pixel text-[75px] leading-none text-accent">{status}</p>
           </div>
@@ -161,7 +161,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
             <div className="absolute right-[480px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
               <p className="font-pixel text-[75px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
               <p className="mt-4 text-[26px] font-medium">{window.location.host}</p>
-              <p className="mt-2 text-[20px] text-muted">Sign in with Google and get 1,000 Oats.</p>
+              <p className="mt-2 text-[20px] text-muted">Sign in with Google and get 1,000 Credits.</p>
             </div>
           )}
         </div>

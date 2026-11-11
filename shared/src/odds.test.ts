@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { placeOdds, winChance, winChanceHistory, winOdds, winPayout } from './odds.ts'
 
-// The house seed of a race: 2,000 Oats, more on the strong horses.
+// The house seed of a race: 2,000 Credits, more on the strong horses.
 const seed = { h1: 500, h2: 500, h3: 400, h4: 300, h5: 200, h6: 100 }
 
 test('a strong horse starts with lower odds', () => {
