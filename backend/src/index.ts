@@ -1,0 +1,11 @@
+import { createServer } from 'node:http'
+import { APP_NAME } from '@horserace/shared'
+
+createServer((req, res) => {
+  if (req.method === 'GET' && req.url === '/health') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    res.end(JSON.stringify({ ok: true, name: APP_NAME }))
+    return
+  }
+  res.writeHead(404).end()
+}).listen(Number(process.env.PORT ?? 8080))
