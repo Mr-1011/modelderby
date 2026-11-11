@@ -211,6 +211,20 @@ export async function placeBet(race: number, market: 'win' | 'place', horse: str
   if (error) throw new Error(error.message)
 }
 
+// An admin starts an open race in 20 seconds. The database rejects a player who is not an admin.
+export async function startRace(race: number) {
+  const { error } = await supabase.rpc('start_race', { p_race: race })
+  if (error) throw new Error(error.message)
+}
+
+export function useIsAdmin() {
+  const id = useSession()?.user.id
+  return useQuery({
+    queryKey: ['admin', id],
+    queryFn: async () => !!id && (await get<boolean>(supabase.rpc('is_admin'))),
+  })
+}
+
 export async function enterModel(race: number, model: string, name: string) {
   const { error } = await supabase.rpc('enter_model', { p_race: race, p_model: model, p_name: name })
   if (error) throw new Error(error.message)

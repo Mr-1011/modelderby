@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Shell from './components/Shell'
+import Admin from './pages/Admin'
 import Arena from './pages/Arena'
 import Board from './pages/Board'
 import Home from './pages/Home'
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/arena" element={<Arena />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="/submit" element={<Navigate to="/arena" replace />} />
     </Routes>
