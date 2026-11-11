@@ -7,6 +7,7 @@ import Home from './pages/Home'
 import Leaderboard from './pages/Leaderboard'
 import Ops from './pages/Ops'
 import Phone from './pages/Phone'
+import Profile from './pages/Profile'
 import RacePage from './pages/RacePage'
 import SignIn from './pages/SignIn'
 
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/race/:id" element={<RacePage />} />
         <Route path="/arena" element={<Arena />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
       <Route path="/submit" element={<Navigate to="/arena" replace />} />

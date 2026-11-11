@@ -66,6 +66,12 @@ export function usePlayer() {
   })
 }
 
+// A player sets the public name and the rider on the profile page.
+export async function setProfile(nickname: string, rider: number[]) {
+  const { error } = await supabase.rpc('set_profile', { p_nickname: nickname, p_rider: rider })
+  if (error) throw new Error(error.message)
+}
+
 export type Standing = Player & { invested: number }
 
 // The 10 players with the most Oats. invested is the Oats of a player in bets on races that are not settled.

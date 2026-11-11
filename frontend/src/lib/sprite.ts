@@ -153,14 +153,17 @@ export function drawFrame(look: Look, frame: number): (string | null)[][] {
   paint(TACK)
   paint(JOCKEY)
 
-  // A black outline, so every coat reads on every background.
-  return grid.map((line, y) =>
+  return outline(grid)
+}
+
+// A black outline, so every sprite reads on every background.
+export const outline = (grid: (string | null)[][]) =>
+  grid.map((line, y) =>
     line.map(
       (color, x) =>
         color ?? (grid[y - 1]?.[x] || grid[y + 1]?.[x] || line[x - 1] || line[x + 1] ? '#000000' : null),
     ),
   )
-}
 
 // The color that stands for a horse outside its sprite, and the text color that reads on it.
 export function colorOf(id: string) {
