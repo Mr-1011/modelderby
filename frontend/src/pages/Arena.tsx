@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import EntryDialog from '../components/EntryDialog'
+import Empty from '../components/Empty'
 import SignInLink from '../components/SignInLink'
-import RaceCard from '../components/RaceCard'
+import RaceCard, { RaceCardSkeleton } from '../components/RaceCard'
 import { useModels, useNow, useRaces, useSession } from '../lib/queries'
 
 export const MAX_HORSES = 8
@@ -27,8 +28,9 @@ export default function Arena() {
         Pick a model on OpenRouter and name your horse. It runs against the house horses in an Arena race, and everyone can bet on it.
       </p>
       {error && <p className="mt-6">{error.message}</p>}
-      {open?.length === 0 && <p className="mt-6 text-muted">No open Arena race now. The next one opens soon.</p>}
+      {open?.length === 0 && <Empty>No open race now</Empty>}
       <ul className="mt-4 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {!data && !error && [0, 1, 2].map((n) => <RaceCardSkeleton key={n} />)}
         {open?.map((summary) => {
           const { race, horses } = summary
           const mine = horses.some((horse) => horse.submitted_by === session?.user.id)

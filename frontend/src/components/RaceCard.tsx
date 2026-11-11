@@ -5,6 +5,22 @@ import type { RaceSummary } from '../lib/queries'
 import { BLURBS, ROOMS, statusOf } from '../lib/race'
 import Glyph from './Glyph'
 
+// The place of a race card while the list loads. It has the height of a card, so the page does not move.
+export function RaceCardSkeleton() {
+  return (
+    <li aria-hidden className="h-[462px] border-2 border-line bg-panel motion-safe:animate-load">
+      <div className="h-[210px] border-b-2 border-line bg-bg" />
+      <div className="p-4">
+        <div className="h-[30px] w-1/2 bg-line" />
+        <div className="mt-4 h-3 bg-line" />
+        <div className="mt-2 h-3 w-2/3 bg-line" />
+        <div className="mt-10 h-[30px] w-2/3 bg-line" />
+        <div className="mt-7 h-[30px] w-1/2 bg-line" />
+      </div>
+    </li>
+  )
+}
+
 // One race in a list: the image of its challenge, one line about it, its favorite or its winner, and its status.
 // It links to the race page.
 export default function RaceCard({ summary, now, children }: { summary: RaceSummary; now: number; children?: ReactNode }) {

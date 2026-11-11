@@ -40,7 +40,28 @@ export default function RacePage() {
   const [alert, setAlert] = useState('')
 
   if (error) return <p className="py-6">{error.message}</p>
-  if (!view || session === undefined || (session && !player)) return <p className="py-6 text-muted">Loading</p>
+  // The parts have the heights of the page of an open race, so the page does not move when the race arrives.
+  if (!view || session === undefined || (session && !player))
+    return (
+      <div role="status" aria-label="Loading" className="motion-safe:animate-load">
+        <div className="flex h-[192px] items-start gap-6 py-6 lg:h-[144px] lg:items-center">
+          <div className="size-16 shrink-0 bg-line lg:size-24" />
+          <div className="min-w-0 grow">
+            <div className="h-[30px] w-48 max-w-full bg-line lg:h-[45px] lg:w-72" />
+            <div className="mt-3 h-3 w-64 max-w-full bg-line lg:w-96" />
+          </div>
+        </div>
+        <div className="h-[296px] lg:h-[282px]">
+          <div className="h-[30px] w-48 bg-line" />
+          <div className="mt-3 h-[160px] border-2 border-line lg:h-[240px] lg:w-2/3" />
+        </div>
+        <ol className="grid grid-cols-2 gap-3 pt-6 sm:grid-cols-3 lg:grid-cols-4">
+          {[0, 1, 2, 3, 4, 5].map((n) => (
+            <li key={n} className="h-[246.5px] border-2 border-line bg-panel lg:h-[281px]" />
+          ))}
+        </ol>
+      </div>
+    )
 
   const { race } = view
   const mine = view.bets.filter((bet) => bet.player_id === session?.user.id)

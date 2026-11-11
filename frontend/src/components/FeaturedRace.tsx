@@ -6,11 +6,26 @@ import Glyph from './Glyph'
 import Horse from './Horse'
 import Track, { grass, Rail } from './Track'
 
+// The place of the large race while it loads. It has the height of an open race, so the list below does not move.
+export function FeaturedSkeleton() {
+  return (
+    <div aria-hidden className="mt-4 h-[484px] border-2 border-line bg-panel motion-safe:animate-load lg:h-[340.5px]">
+      <div className="flex items-center gap-6 p-4 lg:p-6">
+        <div className="size-16 shrink-0 bg-line lg:size-32" />
+        <div className="min-w-0 grow">
+          <div className="h-[30px] w-48 max-w-full bg-line lg:h-[60px] lg:w-80" />
+          <div className="mt-3 h-3 w-64 max-w-full bg-line lg:w-96" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // The race on top of the race list, large and live: the horses with their odds before the start,
 // then the track with the horses at their real positions.
 export default function FeaturedRace({ id, now }: { id: number; now: number }) {
   const { data: view } = useRace(id)
-  if (!view) return null
+  if (!view) return <FeaturedSkeleton />
   const { race, lanes } = view
   const wide = window.innerWidth >= 1024
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)

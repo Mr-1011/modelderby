@@ -125,7 +125,7 @@ export default function EntryDialog({ race, models, onClose }: { race: number; m
               </button>
             </li>
           ))}
-          {found.length === 0 && <li className="px-4 py-6 text-[14px] text-muted">No model with tool calls matches.</li>}
+          {found.length === 0 && <li className="px-4 py-6 text-[14px] text-muted">No model matches</li>}
           {found.length > ROWS && <li className="px-4 py-4 text-[13px] text-muted">Search to see the other models.</li>}
         </ul>
         <form

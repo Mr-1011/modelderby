@@ -31,6 +31,14 @@
   --animate-go: go 1300ms steps(10) both;
   /* A horse that waits lifts its legs now and then. Horse.tsx sets a different duration for each horse. */
   --animate-idle: idle 5s steps(1) infinite;
+  /* A place that still loads gets dark and bright in steps. */
+  --animate-load: load 600ms steps(3) infinite alternate;
+
+  @keyframes load {
+    to {
+      opacity: 0.4;
+    }
+  }
 
   @keyframes flash {
     from {
