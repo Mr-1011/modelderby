@@ -44,7 +44,7 @@ export default function RacePage() {
         }
       />
       {player && (
-        <section className="mx-auto max-w-md px-4 pb-10">
+        <section className="mx-auto max-w-6xl px-4 pb-10 *:max-w-md">
           {race.status === 'settled' && mine.length > 0 && (
             <p className="mb-8 bg-accent p-4 font-pixel text-[30px] leading-none text-on-accent">
               {paid >= staked ? `You won ${oats(paid - staked)} Oats` : `You lost ${oats(staked - paid)} Oats`}
