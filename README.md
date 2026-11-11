@@ -11,7 +11,7 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 ## How a race works
 
 1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model for the next race.
-2. **Betting opens.** The big screen shows a QR code. You scan it, pick a nickname and get 1,000 Oats. You bet on Win or on Place.
+2. **Betting opens.** The big screen shows a QR code. You scan it, sign in with Google and get 1,000 Oats. You bet on Win or on Place.
 3. **The start.** The race starts when the pool reaches 10,000 Oats or when a 60-second countdown ends.
 4. **The race.** Each horse gets an identical copy of the room and 3 minutes. Betting stays open and the odds move with every bet.
 5. **The finish.** The first horse that opens all 5 locks wins, and betting closes at that moment. The other horses race on for Place. If no horse escapes in 3 minutes, the horse with the most open locks wins.
@@ -42,7 +42,8 @@ The odds are pari-mutuel: all stakes of a market go into one pool, and the winne
 
 - Win odds of a horse = total Win pool / stake on that horse.
 - Place: the stakes on the horses that did not place are split into equal shares, one share per placed horse. Each share is paid out in proportion to the stakes on that horse.
-- The house seeds 2,000 Oats per market, split evenly across the horses, so every horse has odds before the first bet.
+- The house seeds 2,000 Oats per market, and a stronger model gets a larger share. So every horse has odds before the first bet, and the favorite starts with the lowest odds.
+- The odds are dynamic: each bet on a horse lowers its odds and raises the odds of the others. The chart on the race page shows this as the chance to win over time.
 
 The finish order is: escaped horses by time, then the other horses by open locks, then by the time of their latest lock.
 
@@ -90,9 +91,9 @@ flowchart LR
   runner -- "logs and final rooms" --> disk
 ```
 
-- **Frontend.** A Vite app on Vercel. `/` is the phone view, `/board` is the big screen, `/submit` is the form to enter your own model. It reads Supabase directly and gets every change through Realtime.
+- **Frontend.** A Vite app on Vercel. `/` is the race list (Popular and Latest), `/race/:id` is one race with the bets and the odds chart, `/arena` is where you enter your own OpenRouter model in an open race, `/leaderboard` ranks the players, and `/board` is the big screen. It reads Supabase directly and gets every change through Realtime.
 - **Runner.** A long-lived Node process on Railway. It owns the race: it forks the sandboxes, runs one agent loop per horse, checks the locks after every step and settles the bets. The models run outside the sandbox through OpenRouter. The runner executes their commands inside the fork.
-- **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet goes through one Postgres function, so the Oats balances stay consistent.
+- **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet, a model entry and the payout each go through one Postgres function, so the Oats balances stay consistent.
 
 ## Fair play
 
@@ -105,7 +106,7 @@ flowchart LR
 
 - Vite, React, TypeScript, Tailwind CSS v4
 - Node.js and TypeScript for the runner
-- Supabase (Postgres, Realtime, anonymous and Google login)
+- Supabase (Postgres, Realtime, Google login)
 - Archil sandboxes and disks
 - OpenRouter for all models
 - Vercel (frontend) and Railway (runner)
@@ -127,7 +128,6 @@ Set these values in `frontend/.env.local`:
 | `VITE_SUPABASE_URL` | The URL of the Supabase project. |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | The public key of that project. Never use the service role key here. |
 | `VITE_GOOGLE_CLIENT_ID` | The Google OAuth client ID for Sign in with Google. |
-| `VITE_RUNNER_URL` | The URL of the runner. The default is `http://localhost:8080`. |
 
 Set these values in `backend/.env`:
 

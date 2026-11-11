@@ -71,17 +71,24 @@ pnpm dlx vercel deploy --prod --scope fluid-labs
 
 `vercel link` appends `.env*` to `.gitignore` and writes a root `.env.local`. Undo both, because that line hides the `.env.example` files.
 
-There is no linter and no test suite.
+There is no linter. The tests are small and run alone:
+
+```
+node --test shared/src/odds.test.ts      # the odds maths
+node --test backend/src/finish.test.ts   # the finish order
+# From backend/: the betting functions, on the hosted database, in a transaction that rolls back.
+PGPASSWORD=$SUPABASE_DB_PASSWORD psql "host=aws-1-us-west-1.pooler.supabase.com port=5432 user=postgres.kqpkcmcehcdipshlirzi dbname=postgres sslmode=require" -v ON_ERROR_STOP=1 -f supabase/test_bets.sql
+```
 
 ## Architecture
 
 The three parts talk through Supabase:
 
-- The frontend reads Supabase directly and subscribes to Realtime on `races`, `entries`, `bets` and `odds_snapshots`. Its routes are in `src/App.tsx`: `/` is the phone view (join, horse cards, bet slip), `/board` is the big screen at 1920x1080, and `/submit` is the form to enter your own model.
+- The frontend reads Supabase directly, and all of that access is in `src/lib/queries.ts`: `useRaces` for the lists, and `useRace(id)` for one live race, which reloads on Realtime events of `races`, `entries` and `bets`. Its routes are in `src/App.tsx`: `/` is the race list (tabs Popular and Latest), `/race/:id` is one race (`pages/RacePage.tsx` gives live data to `PhoneView`, then the odds chart and the result), `/arena` lists the open races where a player can enter a model, `/leaderboard` ranks the players by Oats, and `/board` is the big screen at 1920x1080.
 - The runner owns the race state machine. For each race it forks one Archil sandbox per horse from a prepared base and runs one agent loop per horse: OpenRouter chat completions with one `bash` tool, and each command runs in the fork of that horse. After every tool call the runner runs its own copy of the checker and writes the progress to `entries`. It writes logs, diffs and final room states to the Archil disk `derby`. It is the only writer of race data and uses the service role key.
-- Postgres keeps the Oats balances consistent. Clients have select rights only. A bet goes through the function `place_bet`, and the runner pays out through `settle_race`. These two functions are not in the migration yet.
+- Postgres keeps the Oats balances consistent. Clients have select rights only. A new Google user gets a `players` row with 1,000 Oats from the trigger `handle_new_user`. A bet goes through the function `place_bet`, a player enters a model through `enter_model`, the runner opens a race with `open_race` (house horses plus the house seed bets) and pays out through `settle_race`. They are in `migrations/20261110200000_betting.sql`.
 
-One path does not go through Supabase: `/submit` posts to the runner (`POST /horses` at `VITE_RUNNER_URL`), because the runner must test the endpoint and store the API key.
+The product model: one race is one "challenge" for the player, with a room, a lineup and two markets (Win and Place). A player enters a model as an OpenRouter model id only (`enter_model`). There are no custom endpoints and no API keys of players: every model runs on our OpenRouter key, so `horse_secrets` is not in use and the frontend does not call the runner.
 
 Rules that hold across files:
 
@@ -93,7 +100,8 @@ Rules that hold across files:
 - The public name is not decided. It is `APP_NAME` in `shared/src/index.ts`. Do not hardcode the name in another place.
 - The database column is `players.credits`, but the UI always says "Oats".
 - All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
-- Odds are pari-mutuel and are computed on read from `bets`. The runner also writes `odds_snapshots` every 5 s, but only for the odds chart.
+- Odds are pari-mutuel and are computed on read from `bets` with the maths in `shared/src/odds.ts`: all stakes of a market are one pool, so the odds of a horse fall when more Oats are on it. `open_race` and `enter_model` add a house seed of `horses.seed_weight` x 100 Oats per market (bets with `player_id` null), so each horse has odds before the first bet and a strong model starts as the favorite. The view `bet_totals` has the stakes per horse. The odds chart is computed from `bets` too (`winChanceHistory`), so nothing writes `odds_snapshots`.
+- A payout is floored per bet. A tie on the border of a paying position refunds that market.
 
 ## Google login
 
