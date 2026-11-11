@@ -17,6 +17,89 @@
   /* Horse.tsx sets --sprite-w. The sheet holds 3 frames, and the gallop is frames 1 and 2. */
   --animate-gallop: gallop 280ms steps(2) infinite;
   --animate-hop: hop 420ms steps(6);
+  /* Every animation moves in steps, like a sprite. Never use a smooth easing. */
+  --animate-cheer: hop 560ms steps(6) infinite;
+  --animate-flash: flash 360ms steps(3) both;
+  --animate-dust: dust 420ms steps(4) infinite;
+  --animate-blink: blink 1s steps(1) infinite;
+  --animate-type: type 600ms steps(24) both;
+  --animate-rise: rise 200ms steps(5) both;
+  --animate-wipe: wipe 480ms steps(12) both;
+  --animate-flag: flag 400ms steps(2) infinite;
+  --animate-go: go 1300ms steps(10) both;
+
+  @keyframes flash {
+    from {
+      opacity: 0.9;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes dust {
+    from {
+      transform: translate(0, 0);
+      opacity: 1;
+    }
+    to {
+      transform: translate(-400%, -150%);
+      opacity: 0;
+    }
+  }
+
+  @keyframes blink {
+    50% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes type {
+    from {
+      max-width: 0;
+    }
+    to {
+      max-width: 100%;
+    }
+  }
+
+  @keyframes rise {
+    from {
+      transform: translateY(100%);
+    }
+  }
+
+  @keyframes wipe {
+    from {
+      clip-path: inset(0 100% 0 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
+    }
+  }
+
+  /* Moves the checker of .finish by one square. */
+  @keyframes flag {
+    to {
+      background-position: 16px 0;
+    }
+  }
+
+  @keyframes go {
+    0% {
+      transform: scale(0.3);
+      opacity: 1;
+    }
+    30%,
+    80% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
 
   @keyframes gallop {
     from {
@@ -49,6 +132,13 @@ body {
 a,
 button {
   touch-action: manipulation;
+}
+
+/* A pressed button moves by one pixel step. In the base layer, so utilities can replace it. */
+@layer base {
+  button:active:not(:disabled) {
+    transform: translate(2px, 2px);
+  }
 }
 
 :focus-visible {

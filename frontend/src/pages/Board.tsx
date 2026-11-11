@@ -50,6 +50,7 @@ function useCommentary(lanes: RaceView['lanes']) {
 function BoardView({ race, lanes, challenges, pool }: RaceView) {
   const scale = useFit()
   const event = useCommentary(lanes)
+  const commentary = race.status === 'open' ? 'Place your bets' : race.status === 'running' ? event || 'They are off' : event
   const now = useNow()
 
   const laneH = Math.floor((LANES_H - (lanes.length - 1) * 4) / lanes.length)
@@ -88,8 +89,10 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
         </header>
 
         <div className={`${COLUMNS} mt-4 h-9 items-end font-pixel text-[28px] leading-none text-muted`}>
-          <p className="col-span-2 truncate text-accent">
-            {race.status === 'open' ? 'Place your bets' : race.status === 'running' ? event || 'They are off' : event}
+          {/* The commentary types itself in. The key restarts the typing for each new line. */}
+          <p key={commentary} className="col-span-2 flex items-end text-accent">
+            <span className="overflow-hidden whitespace-nowrap motion-safe:animate-type">{commentary}</span>
+            <i className="mb-1 ml-1.5 h-5 w-3 shrink-0 bg-accent motion-safe:animate-blink" />
           </p>
           <div className="relative h-full">
             {[1, 2, 3, 4, 5].map((n) => (
@@ -123,16 +126,23 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
                     {lane.entry.cost_usd > 0 && <span>{usd(lane.entry.cost_usd)}</span>}
                   </p>
                 </div>
-                <Track lane={lane} px={px} settled={race.status === 'settled'} notes />
+                <Track lane={lane} px={px} settled={race.status === 'settled'} notes delay={i * 70} />
                 <span className="text-right font-pixel text-[50px] leading-none">{odds(lane.win)}</span>
                 <span className="text-right font-pixel text-[50px] leading-none text-muted">{odds(lane.place)}</span>
               </li>
             ))}
           </ol>
 
+          {/* The start of a race: a large "Go" over the track for about one second. */}
+          {race.status === 'running' && now - Date.parse(race.started_at!) < 1300 && (
+            <p className="pointer-events-none absolute inset-y-0 left-[456px] right-[304px] grid place-items-center font-pixel text-[420px] leading-none text-on-accent motion-safe:animate-go">
+              Go
+            </p>
+          )}
+
           {race.status === 'open' && (
             <div className="absolute right-[364px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
-              <p className="font-pixel text-[76px] leading-none text-accent">Bet now</p>
+              <p className="font-pixel text-[76px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
               <p className="mt-4 text-[26px] font-medium">{window.location.host}</p>
               <p className="mt-2 text-[20px] text-muted">Pick a name and get 1,000 Oats.</p>
             </div>

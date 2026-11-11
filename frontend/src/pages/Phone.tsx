@@ -45,7 +45,11 @@ function BetSlip({
   return (
     <div className="fixed inset-0 z-10 flex flex-col justify-end">
       <button aria-label="Close" onClick={onClose} className="grow bg-bg/80" />
-      <div role="dialog" aria-label="Bet slip" className="border-t-4 border-text bg-bg p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div
+        role="dialog"
+        aria-label="Bet slip"
+        className="border-t-4 border-text bg-bg p-4 pb-[max(1rem,env(safe-area-inset-bottom))] motion-safe:animate-rise"
+      >
         <div className="mx-auto max-w-md">
           <div className="flex items-center gap-4">
             <div className="bg-accent p-1">
@@ -134,7 +138,7 @@ export function PhoneView({
         {lanes.map((lane, i) => (
           <li key={lane.horse.id} className="border-b-2 border-line px-4 py-4">
             <div className="h-[62px]">
-              <Track lane={lane} px={2} settled={race.status === 'settled'} />
+              <Track lane={lane} px={2} settled={race.status === 'settled'} delay={i * 70} />
             </div>
             <div className="mt-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
