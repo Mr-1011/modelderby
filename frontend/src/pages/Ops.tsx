@@ -513,16 +513,18 @@ export default function Ops() {
             <p className="mt-1 font-pixel text-[30px] leading-none">{value}</p>
           </div>
         ))}
-        {/* The newest races that have events. A finished race is not in the overview, so this is the way to its replay. */}
+        {/* The overview has room for 3 races. These links open the detail view of each race that is not over, and of each race with events. */}
         <div>
-          <p className={LABEL}>Replay</p>
+          <p className={LABEL}>Races</p>
           <p className="mt-1 flex gap-4 font-pixel text-[30px] leading-none">
-            {[...new Set(events.map((event) => event.race_id))].slice(0, 6).map((race) => (
-              <Link key={race} to={`/ops?race=${race}`} className="text-accent">
-                {race}
-              </Link>
-            ))}
-            {events.length === 0 && '-'}
+            {[...new Set([...(races ?? []).filter(({ race }) => race.status !== 'settled').map(({ race }) => race.id), ...events.map((event) => event.race_id)])]
+              .sort((a, b) => b - a)
+              .slice(0, 10)
+              .map((race) => (
+                <Link key={race} to={`/ops?race=${race}`} className={race === picked ? 'text-text' : 'text-accent'}>
+                  {race}
+                </Link>
+              ))}
           </p>
         </div>
       </header>
