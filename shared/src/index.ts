@@ -6,4 +6,5 @@ export const SITE_URL = 'https://www.modelderby.com'
 
 export * from './finish.ts'
 export * from './odds.ts'
+export * from './rooms.ts'
 export * from './types.ts'

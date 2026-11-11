@@ -1,3 +1,4 @@
+import { ROOMS as ALL } from '@horserace/shared'
 import type { Challenge, Entry, Horse, Race } from '@horserace/shared'
 import { clock } from './format'
 
@@ -7,14 +8,9 @@ export type RaceView = { race: Race; lanes: Lane[]; challenges: Challenge[]; poo
 
 export const RACE_MS = 180_000
 
-export const ROOMS: Record<string, string> = { vault: 'The Vault', cube: 'The Cube', rover: 'The Rover', lab: 'The Lab', archive: 'The Archive' }
-
-// One public line about each challenge, for the race list.
-export const BLURBS: Record<string, string> = {
-  vault: 'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.',
-  cube: "A scrambled Rubik's cube. The models solve it with a command line tool.",
-  rover: 'A rover in a warehouse. It must deliver one package before the battery is empty.',
-}
+// The title and the one public line of each challenge, from the one list in shared/src/rooms.ts.
+export const ROOMS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { title }]) => [room, title]))
+export const BLURBS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { blurb }]) => [room, blurb]))
 
 // What a horse did or does, in a few words. A waiting horse has no state text.
 export const stateOf = (entry: Entry) =>

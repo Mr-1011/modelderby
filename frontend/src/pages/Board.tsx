@@ -1,4 +1,4 @@
-import { APP_NAME, finishOrder } from '@horserace/shared'
+import { APP_NAME, ROOMS as CHALLENGES, finishOrder } from '@horserace/shared'
 import { useEffect, useRef, useState } from 'react'
 import RoomView from '../components/RoomView'
 import Track, { at, Rail } from '../components/Track'
@@ -167,16 +167,24 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
         </div>
 
         <footer className="mt-auto grid h-[112px] grid-cols-6 gap-5 border-t-4 border-text pt-4">
-          {/* The Vault has 5 locks. Each other challenge is one task, so it gets the room of 5. */}
-          {challenges.map((challenge) => (
-            <div key={challenge.id} className={challenges.length === 1 ? 'col-span-5 text-[20px]' : 'text-[15px]'}>
+          {/* The Vault has 5 locks in the table challenges. Each other challenge is one task from the list in shared, so it gets the room of 5. */}
+          {challenges.length > 1 ? (
+            challenges.map((challenge) => (
+              <div key={challenge.id} className="text-[15px]">
+                <p className="font-pixel text-[30px] leading-none">
+                  Lock {challenge.lock} <span className="text-muted">{challenge.category}</span>
+                </p>
+                <p className="mt-2 leading-snug text-muted">{challenge.public_blurb}</p>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-5 text-[20px]">
               <p className="font-pixel text-[30px] leading-none">
-                {challenges.length === 1 ? (ROOMS[race.task] ?? race.task) : `Lock ${challenge.lock}`}{' '}
-                <span className="text-muted">{challenge.category}</span>
+                {ROOMS[race.task] ?? race.task} <span className="text-muted">{CHALLENGES[race.task]?.category}</span>
               </p>
-              <p className="mt-2 leading-snug text-muted">{challenge.public_blurb}</p>
+              <p className="mt-2 leading-snug text-muted">{CHALLENGES[race.task]?.blurb}</p>
             </div>
-          ))}
+          )}
           <div className="col-start-6">
             <p className="font-pixel text-[30px] leading-none text-accent">Rules</p>
             <p className="mt-2 text-[15px] leading-snug text-muted">Solve it. Cheapest wins.</p>
