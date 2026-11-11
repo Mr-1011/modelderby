@@ -27,11 +27,17 @@ function sheet(id: string) {
 }
 
 // scale is the size of one sprite pixel in CSS pixels. Use a whole number, so the pixels stay sharp.
-export default function Horse({ id, scale, running = false }: { id: string; scale: number; running?: boolean }) {
+// With idle, a horse that stands lifts its legs now and then. Each horse has its own rhythm, from its id.
+export default function Horse({
+  id, scale, running = false, idle = false,
+}: {
+  id: string; scale: number; running?: boolean; idle?: boolean
+}) {
+  const beat = [...id].reduce((sum, char) => (sum * 31 + char.charCodeAt(0)) % 4001, 7)
   return (
     <div
       aria-hidden
-      className={`shrink-0 bg-no-repeat [image-rendering:pixelated] ${running ? 'motion-safe:animate-gallop' : ''}`}
+      className={`shrink-0 bg-no-repeat [image-rendering:pixelated] ${running ? 'motion-safe:animate-gallop' : idle ? 'motion-safe:animate-idle' : ''}`}
       style={
         {
           width: SPRITE_W * scale,
@@ -39,6 +45,7 @@ export default function Horse({ id, scale, running = false }: { id: string; scal
           backgroundImage: `url(${sheet(id)})`,
           backgroundSize: `${SPRITE_W * FRAMES * scale}px ${SPRITE_H * scale}px`,
           '--sprite-w': `${SPRITE_W * scale}px`,
+          ...(idle && !running && { animationDuration: `${3000 + beat}ms`, animationDelay: `-${beat}ms` }),
         } as CSSProperties
       }
     />

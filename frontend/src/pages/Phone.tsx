@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import GoogleButton from '../components/GoogleButton'
 import Horse from '../components/Horse'
-import Track from '../components/Track'
+import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { clock, oats, odds, usd } from '../lib/format'
+import { useModels } from '../lib/queries'
 import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
@@ -22,7 +23,7 @@ function Join({ onJoin, demo }: { onJoin: (nickname: string) => void; demo: bool
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
       <h1 className="font-pixel text-[64px] leading-none">{APP_NAME}</h1>
-      <div className="mt-6 flex items-end justify-between bg-accent px-3 py-4">
+      <div className="mt-6 flex items-end justify-between border-y-4 border-text px-3 pb-1 pt-4" style={grass(2)}>
         <Horse id="h3" scale={2} running />
         <Horse id="h4" scale={2} running />
         <Horse id="h1" scale={2} running />
@@ -59,12 +60,12 @@ function BetSlip({
       <div
         role="dialog"
         aria-label="Bet slip"
-        className="border-t-4 border-text bg-bg p-4 pb-[max(1rem,env(safe-area-inset-bottom))] motion-safe:animate-rise"
+        className="border-t-4 border-accent bg-bg p-4 pb-[max(1rem,env(safe-area-inset-bottom))] motion-safe:animate-rise"
       >
         <div className="mx-auto max-w-md">
           <div className="flex items-center gap-4">
-            <div className="bg-accent p-1">
-              <Horse id={horse.id} scale={2} />
+            <div className="p-1" style={grass(2)}>
+              <Horse id={horse.id} scale={2} idle />
             </div>
             <div className="min-w-0">
               <p className="truncate font-pixel text-[34px] leading-none">{horse.name}</p>
@@ -98,7 +99,7 @@ function BetSlip({
   )
 }
 
-// The phone view without its data source: the live page and the demo both render it.
+// The race page without its data source: the live page and the demo both render it.
 export function PhoneView({
   view, player, bets, onJoin, onBet, demo = false,
 }: {
@@ -110,6 +111,7 @@ export function PhoneView({
   demo?: boolean
 }) {
   const { race, lanes } = view
+  const { data: models } = useModels()
   const [slip, setSlip] = useState<{ horse: string; market: Market } | null>(null)
   const [now, setNow] = useState(Date.now)
   useEffect(() => {
@@ -130,70 +132,101 @@ export function PhoneView({
           ? `${winner.horse.name} wins`
           : 'Race over'
   const slipLane = slip && lanes.find((lane) => lane.horse.id === slip.horse)
+  // A player bets on one horse per race.
+  const mine = bets[0]?.horse
+  // The size of one sprite pixel. A lane is 18 sprite pixels high and a horse is 27, so the horses overlap.
+  const px = window.innerWidth < 1024 ? 2 : 3
 
   return (
-    <main className="mx-auto max-w-md pb-10">
-      <header className="sticky top-0 z-[5] border-b-4 border-text bg-bg px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="flex items-baseline justify-between gap-4">
-          {/* The way back to the race list. */}
-          <Link to="/" className="font-pixel text-[34px] leading-none">
-            {APP_NAME}
-          </Link>
-          <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
-        </div>
-        <div className="mt-2 flex items-baseline justify-between gap-4 text-[14px]">
-          <p className="text-muted">
-            Race {race.id}, {ROOMS[race.task] ?? race.task}
-          </p>
-          <p>{race.status === 'running' && !open ? `Bets closed, ${status}` : status}</p>
+    <main className="pb-10">
+      <header className="sticky top-0 z-[5] border-b-4 border-text bg-bg pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="flex items-baseline justify-between gap-4">
+            {/* The way back to the race list. */}
+            <Link to="/" className="font-pixel text-[34px] leading-none">
+              {APP_NAME}
+            </Link>
+            <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
+          </div>
+          <div className="mt-2 flex items-baseline justify-between gap-4 text-[14px]">
+            <p className="text-muted">
+              Race {race.id}, {ROOMS[race.task] ?? race.task}
+            </p>
+            <p>{race.status === 'running' && !open ? `Bets closed, ${status}` : status}</p>
+          </div>
         </div>
       </header>
 
-      <ol>
-        {lanes.map((lane, i) => (
-          <li key={lane.horse.id} className="border-b-2 border-line px-4 py-4">
-            <div className="h-[62px]">
-              <Track lane={lane} px={2} settled={race.status === 'settled'} delay={i * 70} />
+      {/* The track shows only when the race has started. Before the start, the horses wait in their boxes. */}
+      {race.status !== 'open' && (
+        <div className="border-b-4 border-text">
+          <div style={{ height: px * 10 }}>
+            <Rail px={px} />
+          </div>
+          {lanes.map((lane, i) => (
+            <div key={lane.horse.id} style={{ height: px * 18 }}>
+              <Track lane={lane} px={px} settled={race.status === 'settled'} stripe={i} />
             </div>
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 font-pixel text-[28px] leading-none">
-                  <span
-                    className="grid size-7 shrink-0 place-items-center text-[22px]"
-                    style={{ background: colorOf(lane.horse.id).color, color: colorOf(lane.horse.id).ink }}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="truncate">{lane.horse.name}</span>
-                </p>
-                <p className="mt-1.5 truncate text-[13px] text-muted">
-                  {lane.horse.model}
-                  {lane.entry.steps > 0 && `, ${lane.entry.steps} steps`}
-                  {lane.entry.cost_usd > 0 && `, ${usd(lane.entry.cost_usd)}`}
-                </p>
+          ))}
+          <div style={{ height: px * 6 }}>
+            <Rail px={px} />
+          </div>
+        </div>
+      )}
+
+      <ol className="mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pt-4 sm:grid-cols-3 lg:grid-cols-4">
+        {lanes.map(({ horse, entry, ...price }, i) => {
+          const model = models?.find((option) => option.id === horse.model)
+          return (
+            <li key={horse.id} className={`min-w-0 border-2 bg-panel ${mine === horse.id ? 'border-accent' : 'border-line'}`}>
+              <div className="relative flex justify-center pb-1 pt-5" style={grass(px)}>
+                <span
+                  className="absolute left-0 top-0 grid size-7 place-items-center font-pixel text-[22px] leading-none"
+                  style={{ background: colorOf(horse.id).color, color: colorOf(horse.id).ink }}
+                >
+                  {i + 1}
+                </span>
+                <Horse id={horse.id} scale={px} idle running={entry.state === 'running'} />
               </div>
-              <div className="flex shrink-0 gap-2">
-                {(['win', 'place'] as const).map((market) => (
-                  <button
-                    key={market}
-                    disabled={!open}
-                    onClick={() => setSlip({ horse: lane.horse.id, market })}
-                    className="h-14 w-[78px] border-2 border-text leading-none disabled:border-line disabled:text-muted"
-                  >
-                    <span className="block text-[12px] text-muted">{market === 'win' ? 'Win' : 'Place'}</span>
-                    <span className="mt-1 block font-pixel text-[26px] leading-none">{odds(lane[market])}</span>
-                  </button>
-                ))}
+              <div className="p-3">
+                <p className="truncate font-pixel text-[26px] leading-none">{horse.name}</p>
+                <p className="mt-1.5 truncate text-[12px] text-muted">{horse.model}</p>
+                <p className="truncate text-[12px] text-muted">
+                  {horse.provider}
+                  {horse.reasoning_effort && `, ${horse.reasoning_effort} effort`}
+                </p>
+                <p className="truncate text-[12px] text-muted">
+                  {entry.steps > 0
+                    ? `${entry.locks_open} of 5 locks, ${usd(entry.cost_usd)}`
+                    : model
+                      ? `${usd(model.prompt)} / ${usd(model.completion)} per M`
+                      : ' '}
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {(['win', 'place'] as const).map((market) => (
+                    <button
+                      key={market}
+                      disabled={!open || (mine !== undefined && mine !== horse.id)}
+                      onClick={() => setSlip({ horse: horse.id, market })}
+                      className="h-16 border-2 border-text leading-none disabled:border-line disabled:text-muted"
+                    >
+                      <span className="block text-[12px] text-muted">{market === 'win' ? 'Win' : 'Place'}</span>
+                      <span className="mt-1 block font-pixel text-[30px] leading-none">{odds(price[market])}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </li>
-        ))}
+            </li>
+          )
+        })}
       </ol>
 
-      <section className="px-4 pt-6">
+      <section className="mx-auto max-w-6xl px-4 pt-8">
         <h2 className="font-pixel text-[28px] leading-none">Your bets</h2>
-        {bets.length === 0 && <p className="mt-3 text-[15px] text-muted">No bets yet. Tap the odds of a horse to bet.</p>}
-        <ul className="mt-3">
+        {bets.length === 0 && (
+          <p className="mt-3 text-[15px] text-muted">No bets yet. Pick one horse and tap its odds. You bet on one horse per race.</p>
+        )}
+        <ul className="mt-3 max-w-md">
           {bets.map((bet, i) => (
             <li key={i} className="flex justify-between gap-4 border-b-2 border-line py-3 text-[15px]">
               <span className="truncate">

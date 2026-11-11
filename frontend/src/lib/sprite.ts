@@ -168,3 +168,13 @@ export function colorOf(id: string) {
   const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16))
   return { color, ink: r * 299 + g * 587 + b * 114 > 140000 ? '#000000' : '#f5f1e6' }
 }
+
+// The meadow of the track: a light and a dark mown stripe, each one tile of 16x16 sprite pixels as a CSS image.
+const turf = (base: string, lit: string, shade: string) =>
+  `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'>` +
+      `<path fill='${base}' d='M0 0h16v16H0z'/>` +
+      `<path fill='${lit}' d='M2 3h1v2H2zM10 1h1v2h-1zM6 9h1v2H6zM13 11h1v2h-1z'/>` +
+      `<path fill='${shade}' d='M3 4h1v1H3zM11 2h1v1h-1zM7 10h1v1H7zM14 12h1v1h-1zM5 14h2v1H5zM12 6h2v1h-2z'/></svg>`,
+  )}")`
+export const GRASS = [turf('#3f9a3c', '#62bd4f', '#2f7d31'), turf('#378c36', '#56ad47', '#286d2b')]

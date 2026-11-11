@@ -1,6 +1,6 @@
 import { clock } from '../lib/format'
 import type { Lane } from '../lib/race'
-import { SPRITE_W } from '../lib/sprite'
+import { GRASS, SPRITE_W } from '../lib/sprite'
 import Horse from './Horse'
 
 const PLACES = ['1st', '2nd', '3rd']
@@ -9,13 +9,26 @@ const PLACES = ['1st', '2nd', '3rd']
 // The unit is % for an element in the track, and cqw for a length that must not depend on the parent.
 export const at = (n: number, spriteW: number, unit = '%') => `calc((100${unit} - ${spriteW + 8}px) * ${n} / 5)`
 
+// The meadow under a lane or a fence. stripe is 0 or 1: the lanes change between a light and a dark stripe.
+export const grass = (px: number, stripe = 0) => ({ backgroundImage: GRASS[stripe % 2], backgroundSize: px * 16 })
+
+// The white fence above and below the lanes.
+export function Rail({ px }: { px: number }) {
+  return (
+    <div className="h-full" style={grass(px, 1)}>
+      <div className="rail h-full" />
+    </div>
+  )
+}
+
 // One lane of the derby: the horse jumps one step for each open lock. px is the size of one sprite pixel.
+// A horse can be higher than its lane. Then it overlaps the lane above it, like on a fairground derby.
+// The note is at the middle of the horse, so the horse of the lane below does not hide it.
 // With notes, the lane also shows the last command or the result next to the horse.
-// delay is the wait in ms before the lane wipes in, so a list of lanes can enter one after the other.
 export default function Track({
-  lane, px, settled, notes = false, delay = 0,
+  lane, px, settled, notes = false, stripe = 0,
 }: {
-  lane: Lane; px: number; settled: boolean; notes?: boolean; delay?: number
+  lane: Lane; px: number; settled: boolean; notes?: boolean; stripe?: number
 }) {
   const { horse, entry } = lane
   const spriteW = SPRITE_W * px
@@ -34,20 +47,20 @@ export default function Track({
   // The note goes on the side of the horse that has more room.
   const ahead = locks < 3
   return (
-    <div className="@container relative h-full overflow-hidden bg-accent motion-safe:animate-wipe" style={{ animationDelay: `${delay}ms` }}>
+    <div className="@container relative h-full overflow-x-clip" style={grass(px, stripe)}>
       {[1, 2, 3, 4].map((n) => (
-        <i key={n} className="absolute inset-y-0 w-1 bg-accent-deep" style={{ left: `calc(${at(n, spriteW)} + ${spriteW}px)` }} />
+        <i key={n} className="absolute inset-y-0 w-1 bg-text/25" style={{ left: `calc(${at(n, spriteW)} + ${spriteW}px)` }} />
       ))}
       <i className={`finish absolute inset-y-0 right-0 w-8 ${escaped ? 'motion-safe:animate-flag' : ''}`} />
       {/* The lane flashes each time a lock opens. The key restarts the flash. */}
       {locks > 0 && <i key={locks} className="pointer-events-none absolute inset-0 bg-text opacity-0 motion-safe:animate-flash" />}
       <div
-        className="absolute top-1/2 -translate-y-1/2 transition-[left] duration-500 [transition-timing-function:steps(6)]"
-        style={{ left: at(locks, spriteW) }}
+        className="absolute transition-[left] duration-500 [transition-timing-function:steps(6)]"
+        style={{ left: at(locks, spriteW), bottom: px }}
       >
         {note && (
           <p
-            className="absolute top-1/2 -translate-y-1/2 truncate text-[18px] font-medium text-on-accent"
+            className="absolute top-1/2 -translate-y-1/2 truncate bg-bg px-2 text-[18px] font-medium text-text"
             style={
               ahead
                 ? { left: spriteW + 16, maxWidth: `calc(100cqw - ${spriteW + 64}px - ${at(locks, spriteW, 'cqw')})` }

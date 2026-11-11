@@ -1,6 +1,6 @@
 import { APP_NAME } from '@horserace/shared'
 import { useEffect, useRef, useState } from 'react'
-import Track, { at } from '../components/Track'
+import Track, { at, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { clock, oats, odds, usd } from '../lib/format'
 import { useBoardRaceId, useRace } from '../lib/queries'
@@ -11,6 +11,7 @@ import { colorOf, SPRITE_H, SPRITE_W } from '../lib/sprite'
 const W = 1920
 const H = 1080
 const LANES_H = 704
+const RAIL_H = 28
 const COLUMNS = 'grid grid-cols-[56px_380px_1fr_132px_132px] gap-x-5'
 
 function useFit() {
@@ -54,8 +55,9 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
   const commentary = race.status === 'open' ? 'Place your bets' : race.status === 'running' ? event || 'They are off' : event
   const now = useNow()
 
-  const laneH = Math.floor((LANES_H - (lanes.length - 1) * 4) / lanes.length)
-  const px = Math.max(2, Math.floor(laneH / SPRITE_H))
+  const laneH = Math.floor((LANES_H - 2 * RAIL_H) / lanes.length)
+  // One sprite pixel more than fits in a lane, so each horse overlaps the lane above it.
+  const px = Math.floor(laneH / SPRITE_H) + 1
   const spriteW = SPRITE_W * px
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
 
@@ -111,7 +113,12 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
         </div>
 
         <div className="relative mt-2">
-          <ol className="flex flex-col gap-1">
+          <div className={COLUMNS} style={{ height: RAIL_H }}>
+            <div className="col-start-3">
+              <Rail px={px} />
+            </div>
+          </div>
+          <ol>
             {lanes.map((lane, i) => (
               <li key={lane.horse.id} className={`${COLUMNS} items-center`} style={{ height: laneH }}>
                 <span
@@ -127,16 +134,21 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
                     {lane.entry.cost_usd > 0 && <span>{usd(lane.entry.cost_usd)}</span>}
                   </p>
                 </div>
-                <Track lane={lane} px={px} settled={race.status === 'settled'} notes delay={i * 70} />
+                <Track lane={lane} px={px} settled={race.status === 'settled'} notes stripe={i} />
                 <span className="text-right font-pixel text-[50px] leading-none">{odds(lane.win)}</span>
                 <span className="text-right font-pixel text-[50px] leading-none text-muted">{odds(lane.place)}</span>
               </li>
             ))}
           </ol>
+          <div className={COLUMNS} style={{ height: RAIL_H }}>
+            <div className="col-start-3">
+              <Rail px={px} />
+            </div>
+          </div>
 
           {/* The start of a race: a large "Go" over the track for about one second. */}
           {race.status === 'running' && now - Date.parse(race.started_at!) < 1300 && (
-            <p className="pointer-events-none absolute inset-y-0 left-[456px] right-[304px] grid place-items-center font-pixel text-[420px] leading-none text-on-accent motion-safe:animate-go">
+            <p className="pointer-events-none absolute inset-y-0 left-[456px] right-[304px] grid place-items-center font-pixel text-[420px] leading-none text-text motion-safe:animate-go">
               Go
             </p>
           )}

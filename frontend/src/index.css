@@ -27,6 +27,10 @@
   --animate-wipe: wipe 480ms steps(12) both;
   --animate-flag: flag 400ms steps(2) infinite;
   --animate-go: go 1300ms steps(10) both;
+  /* A horse that waits lifts its legs now and then. Horse.tsx sets a different duration for each horse. */
+  --animate-idle: idle 5s steps(1) infinite;
+  /* Glyph.tsx sets a delay for each pixel, so the image falls apart and builds itself again from the bottom. */
+  --animate-assemble: assemble 6s steps(1) infinite both;
 
   @keyframes flash {
     from {
@@ -101,6 +105,29 @@
     }
   }
 
+  @keyframes idle {
+    0%,
+    98% {
+      background-position-x: 0;
+    }
+    86%,
+    94% {
+      background-position-x: calc(var(--sprite-w) * -1);
+    }
+    90% {
+      background-position-x: calc(var(--sprite-w) * -2);
+    }
+  }
+
+  @keyframes assemble {
+    0% {
+      opacity: 0;
+    }
+    25% {
+      opacity: 1;
+    }
+  }
+
   @keyframes gallop {
     from {
       background-position-x: calc(var(--sprite-w) * -1);
@@ -144,6 +171,13 @@ button {
 :focus-visible {
   outline: 3px solid var(--color-text);
   outline-offset: 2px;
+}
+
+/* The white fence of the track: one bar and posts. */
+.rail {
+  background:
+    linear-gradient(var(--color-text) 0 0) 0 4px / 100% 4px no-repeat,
+    repeating-linear-gradient(90deg, var(--color-text) 0 4px, transparent 4px 48px);
 }
 
 /* The finish line of a lane. */
