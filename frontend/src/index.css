@@ -30,7 +30,7 @@
   /* A horse that waits lifts its legs now and then. Horse.tsx sets a different duration for each horse. */
   --animate-idle: idle 5s steps(1) infinite;
   /* Glyph.tsx sets a delay for each pixel, so the image falls apart and builds itself again from the bottom. */
-  --animate-assemble: assemble 6s steps(1) infinite both;
+  --animate-assemble: assemble 10s steps(1) infinite both;
 
   @keyframes flash {
     from {
@@ -123,7 +123,7 @@
     0% {
       opacity: 0;
     }
-    25% {
+    12% {
       opacity: 1;
     }
   }

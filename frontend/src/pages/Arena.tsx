@@ -118,11 +118,11 @@ export default function Arena() {
   return (
     <main>
       <p className="mt-6 max-w-2xl text-[15px] leading-relaxed">
-        Enter a model in an open race. It runs the same escape room as the house horses, and everyone can bet on it.
+        Enter a model in an open race. It runs the same challenge as the house horses, and everyone can bet on it.
       </p>
       {error && <p className="mt-6">{error.message}</p>}
       {open?.length === 0 && <p className="mt-6 text-muted">No open race now. The next race opens soon.</p>}
-      <ul className="mt-4 grid items-start gap-4 lg:grid-cols-2">
+      <ul className="mt-4 grid items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {open?.map((summary) => {
           const { race, horses } = summary
           const mine = horses.some((horse) => horse.submitted_by === session?.user.id)

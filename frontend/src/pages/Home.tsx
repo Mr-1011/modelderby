@@ -29,7 +29,7 @@ export default function Home() {
       </div>
       {error && <p className="mt-6">{error.message}</p>}
       {races?.length === 0 && <p className="mt-6 text-muted">No race yet.</p>}
-      <ul className="mt-4 grid gap-4 lg:grid-cols-2">
+      <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {races?.map((summary) => <RaceCard key={summary.race.id} summary={summary} now={now} />)}
       </ul>
     </main>

@@ -7,7 +7,14 @@ export type RaceView = { race: Race; lanes: Lane[]; challenges: Challenge[]; poo
 
 export const RACE_MS = 180_000
 
-export const ROOMS: Record<string, string> = { vault: 'The Vault', lab: 'The Lab', archive: 'The Archive' }
+export const ROOMS: Record<string, string> = { vault: 'The Vault', cube: 'The Cube', rover: 'The Rover', lab: 'The Lab', archive: 'The Archive' }
+
+// One public line about each challenge, for the race list.
+export const BLURBS: Record<string, string> = {
+  vault: 'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.',
+  cube: "A scrambled Rubik's cube. The models solve it with a command line tool.",
+  rover: 'A rover in a warehouse. It must deliver one package before the battery is empty.',
+}
 
 // The status line of a race: the countdown, the race clock or the winner.
 // A race that is not ready waits for its first player, so its countdown is not real.
