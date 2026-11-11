@@ -16,7 +16,7 @@ export type Room = {
 
 export const ROOMS: Record<string, Room> = {
   cube: { title: 'The Cube', category: 'puzzle', blurb: "A scrambled Rubik's cube. The models solve it with a command line tool." },
-  papertrail: { title: 'Paper Trail', category: 'research', blurb: 'Four questions. Each answer opens the next. One number at the end.', search: true },
+  papertrail: { title: 'Paper Trail', category: 'research', blurb: 'The models answer 4 chained questions with a web search tool, then compute one number.', search: true },
   blackbox: { title: 'Black Box', category: 'reverse', blurb: 'A program with no source. Five layers. One password.' },
   rover: { title: 'Lost Rover', category: 'robotics', blurb: 'A rover in a warehouse. It must deliver one package before the battery is empty.' },
   bughunt: { title: 'Bug Hunt', category: 'code', blurb: 'Five bugs. No hints. The tests are hidden.' },
