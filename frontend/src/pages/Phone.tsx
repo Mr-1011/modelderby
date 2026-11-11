@@ -8,7 +8,7 @@ import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
 import { useModels } from '../lib/queries'
-import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf, TAGS } from '../lib/race'
+import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf, TAG_ICONS, TAGS } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
@@ -126,7 +126,8 @@ export function PhoneView({
           {/* The kind of the challenge is the filled tag. The other tags are the tools of a horse. */}
           <ul className="mt-3 flex flex-wrap gap-2 text-[12px] leading-5">
             {TAGS[race.task]?.map((tag, i) => (
-              <li key={tag} className={`border-2 border-line px-2 ${i ? 'text-muted' : 'bg-line'}`}>
+              <li key={tag} className={`flex items-center gap-1.5 border-2 border-line px-2 ${i ? 'text-muted' : 'bg-line'}`}>
+                {TAG_ICONS[tag] && <img src={TAG_ICONS[tag]} alt="" className="size-3.5" />}
                 {tag}
               </li>
             ))}
