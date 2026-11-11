@@ -11,7 +11,8 @@ import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
 export type Player = { nickname: string; credits: number }
-export type MyBet = { horse: string; market: Market; amount: number }
+// payout is set when the race is settled. 0 is a lost bet.
+export type MyBet = { horse: string; market: Market; amount: number; payout?: number | null }
 
 const BUTTON = 'h-14 border-2 border-text font-pixel text-[28px] leading-none disabled:border-line disabled:text-muted'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
@@ -198,7 +199,13 @@ export function PhoneView({
               <span className="truncate">
                 {lanes.find((lane) => lane.horse.id === bet.horse)?.horse.name ?? bet.horse}, {bet.market === 'win' ? 'to win' : 'to place'}
               </span>
-              <span className="shrink-0">{oats(bet.amount)} Oats</span>
+              {bet.payout == null ? (
+                <span className="shrink-0">{oats(bet.amount)} Oats</span>
+              ) : bet.payout > 0 ? (
+                <span className="shrink-0 text-accent">Won {oats(bet.payout)} Oats</span>
+              ) : (
+                <span className="shrink-0 text-muted">Lost {oats(bet.amount)} Oats</span>
+              )}
             </li>
           ))}
         </ul>

@@ -29,7 +29,9 @@ export default function RacePage() {
       <PhoneView
         view={view}
         player={player ?? null}
-        bets={mine.map((bet) => ({ horse: bet.outcome, market: bet.market, amount: bet.amount })).reverse()}
+        bets={mine
+          .map((bet) => ({ horse: bet.outcome, market: bet.market, amount: bet.amount, payout: bet.payout }))
+          .reverse()}
         onJoin={signIn}
         onBet={(horse, market, amount) =>
           placeBet(id, market, horse, amount).then(
