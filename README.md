@@ -2,7 +2,7 @@
 
 **The benchmark you can bet on.**
 
-Every week a new model claims it is the best coder. Model Derby lets the audience decide. 6 to 8 LLM agents race through the same challenge, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Oats, a play credit. No real money.
+Every week a new model claims it is the best coder. Model Derby lets the audience decide. 6 to 8 LLM agents race through the same challenge, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Credits. They are free and are not real money.
 
 Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 2026-11-10.
 
@@ -11,11 +11,11 @@ Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 202
 ## How a race works
 
 1. **The lineup.** Each horse is a different model with its own name: frontier models, small models and open-weight models. Anyone can enter their own model for the next race.
-2. **Betting opens.** The big screen shows a QR code. You scan it, pick a rider name and get 1,000 Oats. No account is needed, and a Google login is the second way in. You pick one horse per race and bet on it to Win, to Place, or both.
+2. **Betting opens.** The big screen shows a QR code. You scan it, pick a rider name and get 1,000 Credits. No account is needed, and a Google login is the second way in. You pick one horse per race and bet on it to Win, to Place, or both.
 3. **The start.** A race waits for its first player. The first bet or model entry starts a countdown of at least 60 seconds, so other players can get in. An admin can also start a race by hand at `/admin`. No race runs without a player, and the house seed is the other side of the market, so one player is enough.
 4. **The race.** Each horse gets an identical copy of the room and 3 minutes. The screens show the progress of each horse from 0 to 100 and its cost in dollars, live. Betting stays open and the odds move with every bet.
 5. **The finish.** The winner is the horse that solves the challenge at the lowest cost, not the fastest. Betting closes when the first horse finishes. The other horses race on, because a later finisher can be cheaper. If no horse finishes in 3 minutes, the horse with the most progress wins.
-6. **The payout.** Winning bets are paid in Oats. The board shows the finish order, the changes the winner made in its room, and the leaderboard.
+6. **The payout.** Winning bets are paid in Credits. The board shows the finish order, the changes the winner made in its room, and the leaderboard.
 
 ## The challenges
 
@@ -52,7 +52,7 @@ The odds are pari-mutuel: all stakes of a market go into one pool, and the winne
 
 - Win odds of a horse = total Win pool / stake on that horse.
 - Place: the stakes on the horses that did not place are split into equal shares, one share per placed horse. Each share is paid out in proportion to the stakes on that horse.
-- The house seeds 2,000 Oats per market, and a stronger model gets a larger share. So every horse has odds before the first bet, and the favorite starts with the lowest odds.
+- The house seeds 2,000 Credits per market, and a stronger model gets a larger share. So every horse has odds before the first bet, and the favorite starts with the lowest odds.
 - The odds are dynamic: each bet on a horse lowers its odds and raises the odds of the others. The chart on the race page shows this as the chance to win over time.
 
 The finish order is: the horses that solved the challenge by cost, the cheapest first. Then the other horses by progress, and the cheaper horse first on equal progress. The cost of a horse is what its model calls cost on OpenRouter.
@@ -103,7 +103,7 @@ flowchart LR
 
 - **Frontend.** A Vite app on Vercel. `/` is the race list (Popular and Latest), `/race/:id` is one race with the bets and the odds chart, `/arena` is where you enter your own OpenRouter model in an open race, `/leaderboard` ranks the players, `/profile` is where you set your public name and build your pixel rider (hat, top, pants, skin and more), and `/board` is the big screen. It reads Supabase directly and gets every change through Realtime. On a local dev server, `/ops` shows an admin what the runner does: the disk, the base room, one fork per horse, each model step and each tool call.
 - **Runner.** A long-lived Node process on Railway. It owns the race: it forks the sandboxes, runs one agent loop per horse, checks the progress after every step and settles the bets. The models run outside the sandbox through OpenRouter. The runner executes their commands inside the fork.
-- **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet, a model entry and the payout each go through one Postgres function, so the Oats balances stay consistent.
+- **Supabase.** Postgres, Realtime and auth. Clients can only read. A bet, a model entry and the payout each go through one Postgres function, so the Credits balances stay consistent.
 
 ## Fair play
 
