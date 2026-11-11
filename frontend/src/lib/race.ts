@@ -31,7 +31,7 @@ export const stateOf = (entry: Entry) =>
           : 'not solved'
 
 // How far a horse is: the open locks in the Vault, and a percentage in the other challenges.
-export const progressOf = (task: string, entry: Entry) => (task === 'vault' ? `${entry.locks_open} of 5 locks` : `${Math.round(entry.progress)}%`)
+export const progressOf = (task: string, entry: Entry) => (task === 'vault' ? `${entry.locks_open}/5 locks` : `${Math.round(entry.progress)}%`)
 
 // The status line of a race: the countdown, the race clock or the winner.
 // A race that is not ready waits for its first player, so its countdown is not real.
