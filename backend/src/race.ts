@@ -55,7 +55,8 @@ async function chat(lane: Lane, messages: unknown[], signal: AbortSignal) {
       model: lane.horse.model,
       messages,
       tools: [BASH_TOOL],
-      max_tokens: 2000,
+      // Reasoning tokens count too. 2000 cut off the scripts of the reasoning models.
+      max_tokens: 8000,
       usage: { include: true },
       ...(effort && { reasoning: { effort } }),
     }),
@@ -123,7 +124,10 @@ async function ride(
       let command = ''
       let output: string
       try {
-        command = JSON.parse(call.function.arguments).command
+        // An answer that hits max_tokens can come with a tool call that has no command.
+        const args = JSON.parse(call.function.arguments)
+        if (typeof args.command !== 'string') throw new Error('the bash tool needs a "command" string. Send a shorter command.')
+        command = args.command
         const result = await fork.exec('bash -c "$COMMAND"', { cwd: '/room', env: { COMMAND: command }, timeoutSeconds: 60 })
         output = `${result.stdout}${result.stderr}\n[exit ${result.exitCode ?? result.status}]`
       } catch (error) {
