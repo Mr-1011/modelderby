@@ -29,8 +29,6 @@
   --animate-go: go 1300ms steps(10) both;
   /* A horse that waits lifts its legs now and then. Horse.tsx sets a different duration for each horse. */
   --animate-idle: idle 5s steps(1) infinite;
-  /* Glyph.tsx sets a delay for each pixel, so the image falls apart and builds itself again from the bottom. */
-  --animate-assemble: assemble 10s steps(1) infinite both;
 
   @keyframes flash {
     from {
@@ -119,15 +117,6 @@
     }
   }
 
-  @keyframes assemble {
-    0% {
-      opacity: 0;
-    }
-    12% {
-      opacity: 1;
-    }
-  }
-
   @keyframes gallop {
     from {
       background-position-x: calc(var(--sprite-w) * -1);
@@ -178,6 +167,39 @@ button {
   background:
     linear-gradient(var(--color-text) 0 0) 0 4px / 100% 4px no-repeat,
     repeating-linear-gradient(90deg, var(--color-text) 0 4px, transparent 4px 48px);
+}
+
+/* A pixel of a challenge image. Glyph.tsx sets the times, and they differ for each image, so the images do not move together.
+   About every 10 seconds the image falls apart and builds itself again from the bottom. A few bright pixels are dim now and then. */
+@media (prefers-reduced-motion: no-preference) {
+  .glyph rect {
+    animation: assemble var(--cycle) steps(1) infinite both;
+    animation-delay: var(--at);
+  }
+  .glyph .glint {
+    animation:
+      assemble var(--cycle) steps(1) infinite both,
+      glint var(--glint) steps(1) infinite;
+    animation-delay: var(--at), var(--glint-at);
+  }
+}
+
+@keyframes assemble {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+}
+
+@keyframes glint {
+  0% {
+    fill-opacity: calc(var(--o) * 0.5);
+  }
+  20% {
+    fill-opacity: var(--o);
+  }
 }
 
 /* The finish line of a lane. */

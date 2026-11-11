@@ -1,3 +1,5 @@
+import { type CSSProperties, memo, useState } from 'react'
+
 // A 3D pixel image of a challenge on a grid of 32x32. A challenge without a drawn image gets a generated cube
 // from its name, so a new challenge needs no new art.
 
@@ -112,22 +114,44 @@ function runs(name: string) {
   return found
 }
 
-// px is the size of one pixel of the image. The image falls apart and builds itself again from the bottom.
-export default function Glyph({ name, px }: { name: string; px: number }) {
+// px is the size of one pixel of the image. About every 10 seconds the image falls apart and builds itself again
+// from the bottom, and a few bright pixels are dim now and then. Each image has its own times, so the images do not move together.
+export default memo(function Glyph({ name, px }: { name: string; px: number }) {
+  const [seed] = useState(Math.random)
+  // A number from 0 to 1 that stays the same for this image and for n.
+  const rand = (n: number) => {
+    const value = Math.sin(seed * 1000 + n * 12.9898) * 43758.5453
+    return value - Math.floor(value)
+  }
+  const cycle = 10 + rand(-1) * 6
+  const phase = -rand(-2) * cycle * 1000
   return (
-    <svg width={N * px} height={N * px} viewBox={`0 0 ${N} ${N}`} shapeRendering="crispEdges" aria-hidden className="shrink-0">
-      {runs(name).map(({ x, y, width, pixel: [token, shade] }) => (
-        <rect
-          key={`${x} ${y}`}
-          x={x}
-          y={y}
-          width={width}
-          height={1}
-          fillOpacity={SHADE[shade]}
-          className={`${FILL[token]} motion-safe:animate-assemble`}
-          style={{ animationDelay: `${(N - 1 - y) * 40 + (x % 3) * 60}ms` }}
-        />
-      ))}
+    <svg
+      width={N * px}
+      height={N * px}
+      viewBox={`0 0 ${N} ${N}`}
+      shapeRendering="crispEdges"
+      aria-hidden
+      className="glyph shrink-0"
+      style={{ '--cycle': `${cycle}s` } as CSSProperties}
+    >
+      {runs(name).map(({ x, y, width, pixel: [token, shade] }, i) => {
+        const glint = (token === 'A' || token === 'T') && rand(i) < 0.12
+        const times: Record<string, string | number> = { '--at': `${phase + (N - 1 - y) * 40 + (x % 3) * 60}ms` }
+        if (glint) Object.assign(times, { '--o': SHADE[shade], '--glint': `${7 + rand(i + 0.5) * 5}s`, '--glint-at': `${-rand(i + 0.25) * 12}s` })
+        return (
+          <rect
+            key={i}
+            x={x}
+            y={y}
+            width={width}
+            height={1}
+            fillOpacity={SHADE[shade]}
+            className={glint ? `glint ${FILL[token]}` : FILL[token]}
+            style={times as CSSProperties}
+          />
+        )
+      })}
     </svg>
   )
-}
+})
