@@ -1,8 +1,7 @@
-import { type RaceEvent, SITE_URL } from '@horserace/shared'
+import type { RaceEvent } from '@horserace/shared'
 import { useQueryClient } from '@tanstack/react-query'
-import qrcode from 'qrcode-generator'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { clock, usd } from '../lib/format'
 import { type LiveRace, startRace, useForksToday, useIsAdmin, useNow, useRace, useRaceEvents, useRaces } from '../lib/queries'
 import { type Lane, ROOMS, statusOf } from '../lib/race'
@@ -79,62 +78,6 @@ function Node({ lane, events, view, now, right }: { lane: Lane; events: RaceEven
   )
 }
 
-// A QR code in the two colors of the theme. px is the size of one module. The 4 light modules around it are the quiet zone.
-function Qr({ text, px }: { text: string; px: number }) {
-  const code = qrcode(0, 'M')
-  code.addData(text)
-  code.make()
-  const n = code.getModuleCount()
-  let path = ''
-  for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (code.isDark(y, x)) path += `M${x + 4} ${y + 4}h1v1h-1z`
-  return (
-    <svg role="img" aria-label={text} width={(n + 8) * px} height={(n + 8) * px} viewBox={`0 0 ${n + 8} ${n + 8}`} shapeRendering="crispEdges">
-      <rect width="100%" height="100%" className="fill-text" />
-      <path d={path} className="fill-bg" />
-    </svg>
-  )
-}
-
-// The two ways in for the audience: everyone joins and lands on the race list, a judge lands on one race.
-function JoinCodes({ races }: { races: number[] }) {
-  const [picked, setPicked] = useState<number>()
-  const [zoom, setZoom] = useState('')
-  const race = picked && races.includes(picked) ? picked : races[0]
-  const links = [
-    ['Everyone', `${SITE_URL}/join`],
-    // No judge code while no race is open.
-    ...(race ? [['Judge', `${SITE_URL}/join?race=${race}`]] : []),
-  ]
-  return (
-    <div className="border-2 border-line p-3">
-      <div className="flex items-start justify-between gap-3">
-        {links.map(([label, link]) => (
-          <button key={label} onClick={() => setZoom(link)} className="text-left">
-            <p className={LABEL}>{label}</p>
-            <div className="mt-1">
-              <Qr text={link} px={3} />
-            </div>
-          </button>
-        ))}
-      </div>
-      <label className="mt-2 flex items-center justify-end gap-2 text-[12px] text-muted">
-        Race of the judge code
-        <select value={race} onChange={(event) => setPicked(Number(event.target.value))} className="h-7 border-2 border-line bg-bg px-1 text-text">
-          {races.map((id) => (
-            <option key={id}>{id}</option>
-          ))}
-        </select>
-      </label>
-      {zoom && (
-        <button onClick={() => setZoom('')} className="fixed inset-0 z-10 grid place-content-center justify-items-center gap-6 bg-bg">
-          <Qr text={zoom} px={16} />
-          <p className="font-pixel text-[45px] leading-none">{zoom.replace('https://', '')}</p>
-        </button>
-      )}
-    </div>
-  )
-}
-
 function Box({ label, value, lit }: { label: string; value: string; lit: boolean }) {
   return (
     <div className={`min-w-0 border-2 px-2 py-1 ${lit ? 'border-accent' : 'border-line'}`}>
@@ -144,38 +87,209 @@ function Box({ label, value, lit }: { label: string; value: string; lit: boolean
   )
 }
 
+// The start button of an open race.
+function Start({ view, now, onError }: { view: LiveRace; now: number; onError: (text: string) => void }) {
+  const { race } = view
+  const client = useQueryClient()
+  if (race.status !== 'open') return null
+  return (
+    <button
+      // In the last 20 seconds the runner builds the room, so a start changes nothing.
+      disabled={race.ready && Date.parse(race.countdown_ends_at ?? race.opens_at) - now < 20_000}
+      onClick={() =>
+        startRace(race.id).then(
+          () => client.invalidateQueries({ queryKey: ['races'] }),
+          (failure: Error) => onError(failure.message),
+        )
+      }
+      className="h-9 shrink-0 bg-accent px-3 font-pixel text-[15px] uppercase leading-none text-on-accent disabled:bg-line disabled:text-muted"
+    >
+      Start now
+    </button>
+  )
+}
+
+// The files that the runner writes to the disk for each horse. The first one grows during the race.
+const FILES = ['log.jsonl', 'final.diff', 'room.tar.gz', 'result.json']
+
+// One machine of the detail view: the fork of one horse. order is its place in the order of the forks.
+function Machine({ lane, events, view, now, order, edge }: { lane: Lane; events: RaceEvent[]; view: LiveRace; now: number; order: number; edge: string }) {
+  const { horse, entry } = lane
+  const { race } = view
+  const mine = events.filter((event) => event.horse_id === horse.id)
+  const steps = mine.filter((event) => event.kind === 'step')
+  const calls = mine.filter((event) => event.kind === 'tool_call')
+  const flash = mine.find((event) => ['tool_call', 'checkpoint', 'solved', 'out'].includes(event.kind))
+  // The runner has no events for an old race. The entry then still has the id of the machine.
+  const [sandbox, ms] = mine.find((event) => event.kind === 'fork_created')?.text?.split(' ') ?? [entry.sandbox_id]
+  const racing = race.status === 'running'
+  const state = stateText(lane, racing)
+  const elapsed = entry.solved_ms ?? (racing && race.started_at ? now - Date.parse(race.started_at) : 0)
+  const tokensIn = steps.reduce((sum, event) => sum + (event.tokens_in ?? 0), 0)
+  const tokensOut = steps.reduce((sum, event) => sum + (event.tokens_out ?? 0), 0)
+  const lines = calls.length ? calls.slice(0, 8).reverse().map((event) => event.text ?? '') : entry.last_step ? [entry.last_step] : []
+  const logged = entry.steps > 0
+  const delay = { animationDelay: `${order * 150}ms` }
+  return (
+    <li className="min-w-0">
+      {/* The piece of the trunk above this machine, then the branch. */}
+      <div className={`h-0.5 ${edge} ${sandbox ? 'bg-accent' : 'bg-line'}`} />
+      <div className={`mx-auto h-4 w-0.5 ${sandbox ? 'bg-accent' : 'bg-line'}`} />
+      <div className="px-1">
+        {sandbox ? (
+          <div className="overflow-hidden">
+            <div className={`relative h-84 animate-rise overflow-hidden border-2 border-accent p-2 ${entry.state === 'running' ? 'bg-panel' : ''}`} style={delay}>
+              <div className="pointer-events-none absolute inset-0 animate-flash bg-accent" style={delay} />
+              {flash && <div key={flash.id} className="pointer-events-none absolute inset-0 animate-flash bg-accent" />}
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="font-pixel text-[15px] uppercase leading-none text-accent">VM {order + 1}</p>
+                <p className={`font-pixel text-[15px] uppercase leading-none ${state === 'running' || state === 'solved' ? 'text-accent' : 'text-muted'}`}>{state}</p>
+              </div>
+              <p className="mt-1 truncate text-[11px] text-muted">{sandbox}</p>
+              <p className="text-[11px] text-muted">{ms ? `fork ${ms} ms` : 'forked'}</p>
+              <p className="mt-2 truncate font-pixel text-[22.5px] leading-none">{horse.name}</p>
+              <p className="mt-1 truncate text-[11px] text-muted">
+                {horse.model}
+                {horse.reasoning_effort && ` / ${horse.reasoning_effort}`}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1" aria-label={`Progress ${entry.progress} of 100`}>
+                  {[20, 40, 60, 80, 100].map((mark) => (
+                    <div key={mark} className={`size-3 border-2 ${entry.progress >= mark ? 'border-accent bg-accent' : 'border-line'}`} />
+                  ))}
+                </div>
+                <p className="font-pixel text-[30px] leading-none">{usd(entry.cost_usd)}</p>
+              </div>
+              <p className="mt-1 truncate text-[11px] text-muted">
+                step {entry.steps}/{MAX_STEPS}, {clock(elapsed)}
+              </p>
+              <p className="truncate text-[11px] text-muted">
+                {steps.length ? `${kilo(tokensIn)} in ${kilo(tokensOut)} out, ${calls.length} calls` : `${kilo(entry.tokens)} tokens`}
+              </p>
+              <div className="mt-1 text-[11px] leading-4">
+                {lines.map((line, i) => (
+                  <p key={i} className={`truncate ${i === lines.length - 1 ? '' : 'text-muted'}`}>
+                    $ {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="grid h-84 place-items-center border-2 border-dashed border-line p-2">
+            <p className="text-center font-pixel text-[22.5px] leading-none text-muted">{horse.name}</p>
+          </div>
+        )}
+        {/* What the runner keeps of this machine on the disk. */}
+        <div className={`mx-auto h-3 w-0.5 ${logged ? 'bg-accent' : 'bg-line'}`} />
+        <div className={`border-2 p-2 text-[11px] leading-4 ${logged ? 'border-accent' : 'border-line'}`}>
+          <p className="truncate text-muted">
+            races/{race.id}/{horse.id}/
+          </p>
+          {FILES.map((file, i) => (
+            <p key={file} className={(i === 0 ? logged : race.status === 'settled') ? '' : 'text-muted'}>
+              {file}
+            </p>
+          ))}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+// One race in detail: the disk, the base room that is built once, and one machine per horse that forks from it.
+function Detail({ id, events, now, onError }: { id: number; events: RaceEvent[]; now: number; onError: (text: string) => void }) {
+  const { data: view } = useRace(id)
+  // A new key mounts the graph again, so the forks come up again.
+  const [run, setRun] = useState(0)
+  if (!view) return <p className="text-muted">Loading</p>
+  const { race, lanes } = view
+  const mine = events.filter((event) => event.race_id === id)
+  const [, baseId, baseMs] = mine.find((event) => event.kind === 'base_built')?.text?.split(' ') ?? []
+  const built = !!baseId || race.status !== 'open'
+  // Oldest first: the order in which the machines came up.
+  const forks = mine.filter((event) => event.kind === 'fork_created').reverse()
+  const times = forks.map((event) => Number(event.text?.split(' ')[1]))
+  const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)?.horse.name
+  const numbers = [
+    ['Machines', String(lanes.filter((lane) => lane.entry.sandbox_id || forks.some((event) => event.horse_id === lane.horse.id)).length)],
+    ['Fork, average', forks.length ? `${Math.round(times.reduce((sum, ms) => sum + ms, 0) / forks.length)} ms` : '-'],
+    ['First to last fork', forks.length ? `${Date.parse(forks.at(-1)!.at) - Date.parse(forks[0].at)} ms` : '-'],
+  ]
+  return (
+    <section className="min-w-0 border-2 border-accent p-3">
+      <div className="flex flex-wrap items-end gap-x-10 gap-y-3">
+        <div className="min-w-0">
+          <Link to="/ops" className="font-pixel text-[15px] uppercase leading-none text-accent">
+            &lt; Overview
+          </Link>
+          <p className="mt-2 truncate font-pixel text-[30px] leading-none">
+            Race {race.id} <span className="text-muted">{ROOMS[race.task] ?? race.task}</span>
+          </p>
+          <p className="mt-1 text-[12px] text-muted">{statusOf(race, now, winner)}</p>
+        </div>
+        {numbers.map(([label, value]) => (
+          <div key={label}>
+            <p className={LABEL}>{label}</p>
+            <p className="mt-1 font-pixel text-[30px] leading-none">{value}</p>
+          </div>
+        ))}
+        <div className="ml-auto flex gap-2">
+          <button onClick={() => setRun(run + 1)} className="h-9 border-2 border-text px-3 font-pixel text-[15px] uppercase leading-none">
+            Replay
+          </button>
+          <Start view={view} now={now} onError={onError} />
+        </div>
+      </div>
+      <p className="mt-2 text-[12px] text-muted">One runner process holds all agent loops. A machine gets work only when its horse calls bash.</p>
+
+      <div key={run} className="mt-3">
+        <div className="mx-auto w-80">
+          <Box label="Disk" value={`derby  rooms/${race.task}/`} lit />
+          <div className={`mx-auto h-3 w-0.5 ${built ? 'bg-accent' : 'bg-line'}`} />
+          <div className={built ? 'animate-wipe' : ''}>
+            <Box label="Base sandbox" value={baseId ? `${baseId}  built in ${baseMs} ms` : built ? race.task : 'not built'} lit={built} />
+          </div>
+          <div className={`mx-auto h-3 w-0.5 ${built ? 'bg-accent' : 'bg-line'}`} />
+        </div>
+        <ul className="grid" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(0, 1fr))` }}>
+          {lanes.map((lane, i) => {
+            const order = forks.findIndex((event) => event.horse_id === lane.horse.id)
+            return (
+              <Machine
+                key={lane.horse.id}
+                lane={lane}
+                events={mine}
+                view={view}
+                now={now}
+                order={order < 0 ? i : order}
+                edge={i === 0 ? 'ml-[50%]' : i === lanes.length - 1 ? 'mr-[50%]' : ''}
+              />
+            )
+          })}
+        </ul>
+      </div>
+    </section>
+  )
+}
+
 function RaceGraph({ view, events, now, onError }: { view: LiveRace; events: RaceEvent[]; now: number; onError: (text: string) => void }) {
   const { race, lanes } = view
-  const client = useQueryClient()
   const mine = events.filter((event) => event.race_id === race.id)
   const base = mine.find((event) => event.kind === 'base_built')
   const built = !!base || race.status !== 'open'
-  const left = Date.parse(race.countdown_ends_at ?? race.opens_at) - now
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)?.horse.name
   return (
     <section className="flex min-w-0 flex-col border-2 border-accent p-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate font-pixel text-[30px] leading-none">
+          {/* The title opens the machines of this race. */}
+          <Link to={`/ops?race=${race.id}`} className="block truncate font-pixel text-[30px] leading-none">
             Race {race.id} <span className="text-muted">{ROOMS[race.task] ?? race.task}</span>
-          </p>
+          </Link>
           <p className="mt-1 text-[12px] text-muted">{statusOf(race, now, winner)}</p>
         </div>
-        {race.status === 'open' && (
-          <button
-            // In the last 20 seconds the runner builds the room, so a start changes nothing.
-            disabled={race.ready && left < 20_000}
-            onClick={() =>
-              startRace(race.id).then(
-                () => client.invalidateQueries({ queryKey: ['races'] }),
-                (failure: Error) => onError(failure.message),
-              )
-            }
-            className="h-9 shrink-0 bg-accent px-3 font-pixel text-[15px] uppercase leading-none text-on-accent disabled:bg-line disabled:text-muted"
-          >
-            Start now
-          </button>
-        )}
+        <Start view={view} now={now} onError={onError} />
       </div>
 
       {/* Disk, then the base room of this race, then one fork for each horse. */}
@@ -205,6 +319,8 @@ export default function Ops() {
   const { data: forks = 0 } = useForksToday(!!admin)
   const client = useQueryClient()
   const now = useNow()
+  // /ops?race=12 shows the machines of race 12.
+  const picked = Number(useSearchParams()[0].get('race'))
 
   // The races that run, then the open races, then the newest settled races. Always 3 hooks, so the order of hooks is fixed.
   const rank = { running: 0, open: 1, settled: 2 }
@@ -229,6 +345,11 @@ export default function Ops() {
 
   const running = views.filter((view) => view.race.status === 'running').flatMap((view) => view.lanes)
   const names = new Map(views.flatMap((view) => view.lanes.map((lane) => [lane.horse.id, lane.horse.name] as const)))
+  const feed = picked ? events.filter((event) => event.race_id === picked) : events
+  const onError = (text: string) => {
+    alert(text)
+    client.invalidateQueries({ queryKey: ['races'] })
+  }
   const age = events[0] ? now - Date.parse(events[0].at) : Infinity
   const numbers = [
     ['Sandboxes alive', String(running.filter((lane) => lane.entry.state === 'running').length)],
@@ -248,25 +369,16 @@ export default function Ops() {
           </div>
         ))}
       </header>
-      <div className="grid min-h-0 flex-1 items-start gap-3 xl:grid-cols-[repeat(3,minmax(0,1fr))_360px]">
-        {views.map((view) => (
-          <RaceGraph
-            key={view.race.id}
-            view={view}
-            events={events}
-            now={now}
-            onError={(text) => {
-              alert(text)
-              client.invalidateQueries({ queryKey: ['races'] })
-            }}
-          />
-        ))}
-        <div className="grid gap-3 xl:col-start-4">
-          <JoinCodes races={(races ?? []).filter(({ race }) => race.status !== 'settled').map(({ race }) => race.id).sort((a, b) => a - b)} />
-        {/* All events of the runner, newest first. */}
-        <ol className="max-h-[calc(100vh-420px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5">
-          {events.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
-          {events.slice(0, 200).map((event) => (
+      <div className={`grid min-h-0 flex-1 items-start gap-3 ${picked ? 'xl:grid-cols-[minmax(0,1fr)_360px]' : 'xl:grid-cols-[repeat(3,minmax(0,1fr))_360px]'}`}>
+        {picked ? (
+          <Detail id={picked} events={events} now={now} onError={onError} />
+        ) : (
+          views.map((view) => <RaceGraph key={view.race.id} view={view} events={events} now={now} onError={onError} />)
+        )}
+        {/* The events of the runner, newest first. */}
+        <ol className={`max-h-[calc(100vh-130px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5 ${picked ? '' : 'xl:col-start-4'}`}>
+          {feed.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
+          {feed.slice(0, 200).map((event) => (
             <li key={event.id} className="truncate">
               <span className="text-muted">{time(event.at)}</span> R{event.race_id}{' '}
               <span className={['step', 'tool_call'].includes(event.kind) ? 'text-muted' : 'text-accent'}>{event.kind}</span>{' '}
@@ -275,7 +387,6 @@ export default function Ops() {
             </li>
           ))}
         </ol>
-        </div>
       </div>
     </main>
   )
