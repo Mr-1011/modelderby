@@ -15,7 +15,7 @@ export type Player = { nickname: string; credits: number }
 // payout is set when the race is settled. 0 is a lost bet.
 export type MyBet = { horse: string; market: Market; amount: number; payout?: number | null }
 
-const BUTTON = 'h-14 border-2 border-text font-pixel text-[28px] leading-none disabled:border-line disabled:text-muted'
+const BUTTON = 'h-14 border-2 border-text font-pixel text-[30px] leading-none disabled:border-line disabled:text-muted'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
 
 // pays gives what a stake pays. It is less than stake x odds, because the stake moves the odds of its own pool.
@@ -40,7 +40,7 @@ function BetSlip({
               <Horse id={horse.id} scale={2} idle />
             </div>
             <div className="min-w-0">
-              <p className="truncate font-pixel text-[34px] leading-none">{horse.name}</p>
+              <p className="truncate font-pixel text-[30px] leading-none">{horse.name}</p>
               <p className="mt-1 text-[15px] text-muted">
                 {market === 'win' ? 'To win' : 'To place'}, {odds(price)}
               </p>
@@ -109,11 +109,11 @@ export function PhoneView({
         <div className="mx-auto max-w-6xl px-4">
           <div className="flex items-center justify-between gap-4">
             {/* The way back to the race list. */}
-            <Link to="/" className="font-pixel text-[34px] leading-none">
+            <Link to="/" className="font-pixel text-[30px] leading-none">
               {APP_NAME}
             </Link>
             {player ? (
-              <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
+              <p className="font-pixel text-[30px] leading-none text-accent">{oats(player.credits)} Oats</p>
             ) : (
               <SignInLink />
             )}
@@ -151,7 +151,7 @@ export function PhoneView({
             <li key={horse.id} className={`min-w-0 border-2 bg-panel ${mine === horse.id ? 'border-accent' : 'border-line'}`}>
               <div className="relative flex justify-center pb-1 pt-5" style={grass(px)}>
                 <span
-                  className="absolute left-0 top-0 grid size-7 place-items-center font-pixel text-[22px] leading-none"
+                  className="absolute left-0 top-0 grid size-7 place-items-center font-pixel text-[30px] leading-none"
                   style={{ background: colorOf(horse.id).color, color: colorOf(horse.id).ink }}
                 >
                   {i + 1}
@@ -159,7 +159,7 @@ export function PhoneView({
                 <Horse id={horse.id} scale={px} idle running={entry.state === 'running'} />
               </div>
               <div className="p-3">
-                <p className="truncate font-pixel text-[26px] leading-none">{horse.name}</p>
+                <p className="truncate font-pixel text-[22.5px] leading-none lg:text-[30px]">{horse.name}</p>
                 {/* The model id names the provider, so the provider has no line of its own. */}
                 <p className="mt-1.5 truncate text-[12px] text-muted">
                   {horse.model}
@@ -192,7 +192,7 @@ export function PhoneView({
       </ol>
 
       <section className="mx-auto max-w-6xl px-4 pt-8">
-        <h2 className="font-pixel text-[28px] leading-none">Your bets</h2>
+        <h2 className="font-pixel text-[30px] leading-none">Your bets</h2>
         {bets.length === 0 && (
           <p className="mt-3 text-[15px] text-muted">
             {player ? 'No bets yet. ' : 'Sign in to bet. You start with 1,000 Oats. '}
@@ -267,7 +267,7 @@ export default function Phone() {
   if (new URLSearchParams(window.location.search).has('demo')) return <DemoPhone />
   return (
     <main className="grid min-h-dvh place-items-center p-4">
-      <p className="font-pixel text-[40px] text-muted">No race yet</p>
+      <p className="font-pixel text-[45px] text-muted">No race yet</p>
     </main>
   )
 }

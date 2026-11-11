@@ -5,7 +5,7 @@ import { signOut, usePlayer, useSession } from '../lib/queries'
 import SignInLink from './SignInLink'
 
 const TAB =
-  'grid h-14 place-items-center font-pixel text-[22px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:px-5 lg:text-[26px]'
+  'grid h-14 place-items-center font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:px-5 lg:text-[30px]'
 
 // The header with the account and the main pages. The race page and the board have their own headers.
 export default function Shell() {

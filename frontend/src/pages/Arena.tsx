@@ -139,7 +139,7 @@ export default function Arena() {
               ) : (
                 <button
                   onClick={() => setEntering(race.id)}
-                  className="h-12 w-full border-2 border-text px-4 font-pixel text-[24px] leading-none"
+                  className="h-12 w-full border-2 border-text px-4 font-pixel text-[22.5px] leading-none lg:text-[30px]"
                 >
                   Enter a model, {horses.length} of {MAX_HORSES} horses
                 </button>

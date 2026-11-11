@@ -71,20 +71,20 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
       >
         <header className="flex h-[104px] items-end justify-between border-b-4 border-text pb-5">
           <div className="flex items-baseline gap-10">
-            <h1 className="font-pixel text-[76px] leading-none">{APP_NAME}</h1>
-            <p className="font-pixel text-[40px] leading-none text-muted">
+            <h1 className="font-pixel text-[75px] leading-none">{APP_NAME}</h1>
+            <p className="font-pixel text-[45px] leading-none text-muted">
               Race {race.id}, {ROOMS[race.task] ?? race.task}
             </p>
           </div>
           <div className="flex items-baseline gap-14">
-            <p className="font-pixel text-[40px] leading-none text-muted">
+            <p className="font-pixel text-[45px] leading-none text-muted">
               Pool <span className="text-text">{oats(pool)} Oats</span>
             </p>
-            <p className="font-pixel text-[76px] leading-none text-accent">{status}</p>
+            <p className="font-pixel text-[75px] leading-none text-accent">{status}</p>
           </div>
         </header>
 
-        <div className={`${COLUMNS} mt-4 h-9 items-end font-pixel text-[28px] leading-none text-muted`}>
+        <div className={`${COLUMNS} mt-4 h-9 items-end font-pixel text-[30px] leading-none text-muted`}>
           {/* The commentary types itself in. The key restarts the typing for each new line. */}
           <p key={commentary} className="col-span-2 flex items-end text-accent">
             <span className="overflow-hidden whitespace-nowrap motion-safe:animate-type">{commentary}</span>
@@ -115,21 +115,21 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
             {lanes.map((lane, i) => (
               <li key={lane.horse.id} className={`${COLUMNS} items-center`} style={{ height: laneH }}>
                 <span
-                  className="grid size-14 place-items-center font-pixel text-[44px] leading-none"
+                  className="grid size-14 place-items-center font-pixel text-[45px] leading-none"
                   style={{ background: colorOf(lane.horse.id).color, color: colorOf(lane.horse.id).ink }}
                 >
                   {i + 1}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate font-pixel text-[42px] leading-none">{lane.horse.name}</p>
+                  <p className="truncate font-pixel text-[45px] leading-none">{lane.horse.name}</p>
                   <p className="mt-1.5 flex justify-between gap-4 text-[17px] text-muted">
                     <span className="truncate">{lane.horse.model}</span>
                     {lane.entry.cost_usd > 0 && <span>{usd(lane.entry.cost_usd)}</span>}
                   </p>
                 </div>
                 <Track lane={lane} px={px} settled={race.status === 'settled'} notes stripe={i} />
-                <span className="text-right font-pixel text-[50px] leading-none">{odds(lane.win)}</span>
-                <span className="text-right font-pixel text-[50px] leading-none text-muted">{odds(lane.place)}</span>
+                <span className="text-right font-pixel text-[45px] leading-none">{odds(lane.win)}</span>
+                <span className="text-right font-pixel text-[45px] leading-none text-muted">{odds(lane.place)}</span>
               </li>
             ))}
           </ol>
@@ -148,7 +148,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
 
           {race.status === 'open' && (
             <div className="absolute right-[364px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
-              <p className="font-pixel text-[76px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
+              <p className="font-pixel text-[75px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
               <p className="mt-4 text-[26px] font-medium">{window.location.host}</p>
               <p className="mt-2 text-[20px] text-muted">Sign in with Google and get 1,000 Oats.</p>
             </div>
@@ -183,7 +183,7 @@ function LiveBoard() {
   if (view) return <BoardView race={view.race} lanes={view.lanes} challenges={view.challenges} pool={view.pool} />
   return (
     <main className="fixed inset-0 grid place-items-center bg-bg">
-      <p className="font-pixel text-[48px] text-muted">No race yet</p>
+      <p className="font-pixel text-[45px] text-muted">No race yet</p>
     </main>
   )
 }

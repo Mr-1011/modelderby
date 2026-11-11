@@ -11,6 +11,8 @@ import { grass } from './Track'
 // It links to the race page.
 export default function RaceCard({ summary, now, children }: { summary: RaceSummary; now: number; children?: ReactNode }) {
   const { race, horses, pool, favorite, favoriteOdds } = summary
+  // The size of one sprite pixel of the horses. The small size keeps the field in one row on a phone.
+  const px = window.innerWidth < 1024 ? 1 : 2
   const running = race.status === 'running'
   const status = statusOf(race, now, horses.find((horse) => horse.id === race.winner_horse)?.name)
   return (
@@ -21,19 +23,19 @@ export default function RaceCard({ summary, now, children }: { summary: RaceSumm
             <Glyph name={race.task} px={4} />
           </div>
           <div className="min-w-0 grow">
-            <p className="truncate font-pixel text-[34px] leading-none">{ROOMS[race.task] ?? race.task}</p>
+            <p className="truncate font-pixel text-[30px] leading-none">{ROOMS[race.task] ?? race.task}</p>
             <p className="mt-2 text-[14px] text-muted">Race {race.id}</p>
-            <p className={`mt-1 flex items-center gap-2 font-pixel text-[24px] leading-none ${running ? 'text-accent' : ''}`}>
+            <p className={`mt-1 flex items-center gap-2 text-[14px] font-medium ${running ? 'text-accent' : ''}`}>
               {running && <i className="size-3 bg-accent motion-safe:animate-blink" />}
               {status}
             </p>
           </div>
         </div>
-        {/* The field as a pack: on a narrow card the horses overlap, and the left horse is in front. */}
-        <div className="flex border-y-2 border-line px-4 pb-1 pt-3" style={grass(2)}>
+        {/* The field in one row. If the card is too narrow, the horses overlap, and the left horse is in front. */}
+        <div className="flex border-y-2 border-line px-4 pb-1 pt-3" style={grass(px)}>
           {horses.map((horse, i) => (
             <div key={horse.id} className="relative min-w-0 max-w-28 flex-1 last:flex-none" style={{ zIndex: horses.length - i }}>
-              <Horse id={horse.id} scale={2} running={running} idle />
+              <Horse id={horse.id} scale={px} running={running} idle />
             </div>
           ))}
         </div>

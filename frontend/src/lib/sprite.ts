@@ -170,11 +170,12 @@ export function colorOf(id: string) {
 }
 
 // The meadow of the track: a light and a dark mown stripe, each one tile of 16x16 sprite pixels as a CSS image.
+// Each mark is one square pixel, like the pixels of the horses.
 const turf = (base: string, lit: string, shade: string) =>
   `url("data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'>` +
       `<path fill='${base}' d='M0 0h16v16H0z'/>` +
-      `<path fill='${lit}' d='M2 3h1v2H2zM10 1h1v2h-1zM6 9h1v2H6zM13 11h1v2h-1z'/>` +
-      `<path fill='${shade}' d='M3 4h1v1H3zM11 2h1v1h-1zM7 10h1v1H7zM14 12h1v1h-1zM5 14h2v1H5zM12 6h2v1h-2z'/></svg>`,
+      `<path fill='${lit}' d='M2 3h1v1H2zM10 1h1v1h-1zM6 9h1v1H6zM13 11h1v1h-1z'/>` +
+      `<path fill='${shade}' d='M5 6h1v1H5zM12 5h1v1h-1zM1 12h1v1H1zM9 14h1v1H9z'/></svg>`,
   )}")`
-export const GRASS = [turf('#3f9a3c', '#62bd4f', '#2f7d31'), turf('#378c36', '#56ad47', '#286d2b')]
+export const GRASS = [turf('#3b8a3e', '#4fa352', '#2e7133'), turf('#357f39', '#489a4c', '#2a6930')]

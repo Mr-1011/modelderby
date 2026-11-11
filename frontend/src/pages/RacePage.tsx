@@ -49,7 +49,7 @@ export default function RacePage() {
             {paid >= staked ? `You won ${oats(paid - staked)} Oats` : `You lost ${oats(staked - paid)} Oats`}
           </p>
         )}
-        <h2 className="font-pixel text-[28px] leading-none">Chance to win</h2>
+        <h2 className="font-pixel text-[30px] leading-none">Chance to win</h2>
         <p className="mb-4 mt-1 text-[14px] text-muted">The share of the Win pool on each horse. A bet moves it.</p>
         <OddsChart view={view} end={Date.parse(race.betting_closed_at ?? race.ended_at ?? '') || now} />
         {race.seed_revealed && <p className="mt-6 break-all text-[13px] text-muted">Seed of this race: {race.seed_revealed}</p>}
