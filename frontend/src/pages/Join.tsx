@@ -7,17 +7,20 @@ import { grass } from '../components/Track'
 import { joinAsGuest, setProfile, useSession } from '../lib/queries'
 import { PARTS } from '../lib/rider'
 
-// A rider name is one random first name and one random last name, so it is not the name of a real person.
-const FIRST = [
-  'Lucky', 'Dusty', 'Rusty', 'Buck', 'Lefty', 'Red', 'Slim', 'Tex', 'Skip', 'Ace', 'Duke', 'Gus',
-  'Ned', 'Hank', 'Billie', 'Dot', 'Mabel', 'Pearl', 'Ruby', 'Winnie', 'Clem', 'Otis', 'Jeb', 'Lottie',
+// The name field starts with a famous jockey (Furkan, 2026-11-10), so a guest can click Create at once.
+// Two guests can get the same name: there is no check, and a guest can change the name.
+const JOCKEYS = [
+  'Frankie Dettori', 'Lester Piggott', 'Bill Shoemaker', 'Eddie Arcaro', 'Laffit Pincay Jr.', 'Angel Cordero Jr.',
+  'Pat Day', 'Jerry Bailey', 'Mike Smith', 'Gary Stevens', 'Chris McCarron', 'Kent Desormeaux',
+  'Victor Espinoza', 'John Velazquez', 'Javier Castellano', 'Irad Ortiz Jr.', 'Joel Rosario', 'Flavien Prat',
+  'Ryan Moore', 'William Buick', 'Oisin Murphy', 'Tom Marquand', 'Hollie Doyle', 'Rachael Blackmore',
+  'Julie Krone', 'Rosie Napravnik', 'Tony McCoy', 'Ruby Walsh', 'Kieren Fallon', 'Pat Eddery',
+  'Willie Carson', 'Steve Cauthen', 'Ron Turcotte', 'Red Pollard', 'George Woolf', 'Johnny Longden',
+  'Russell Baze', 'Yutaka Take', 'Christophe Soumillon', 'Olivier Peslier', 'Damien Oliver', 'Glen Boss',
+  'Hugh Bowman', 'James McDonald', 'Joao Moreira', 'Zac Purton', 'Calvin Borel', 'Mickael Barzalona',
+  'Christophe Lemaire', 'Fred Archer', 'Gordon Richards', 'Isaac Murphy', 'Jimmy Winkfield', 'Michelle Payne',
 ]
-const LAST = [
-  'Pickett', 'Marlow', 'Saddler', 'Furlong', 'Stirrup', 'Canter', 'Whitlock', 'Paddock', 'Bridle', 'Gallop',
-  'Oatfield', 'Longshot', 'Farrier', 'Withers', 'Haybale', 'Blinkers', 'Trotter', 'Homestretch', 'Fetlock', 'Hotwalker',
-]
-const pick = (list: string[]) => list[Math.floor(Math.random() * list.length)]
-const randomName = () => `${pick(FIRST)} ${pick(LAST)}`
+const randomName = () => JOCKEYS[Math.floor(Math.random() * JOCKEYS.length)]
 const randomRider = () => PARTS.map((part) => Math.floor(Math.random() * part.count))
 
 const STEP = 'grid size-10 shrink-0 place-items-center border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent'
