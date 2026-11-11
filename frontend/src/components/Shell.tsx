@@ -9,7 +9,7 @@ import SignInLink from './SignInLink'
 import { grass } from './Track'
 
 const TAB =
-  'grid h-14 grow place-items-center px-2 font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:grow-0 lg:px-5 lg:text-[30px]'
+  'grid h-14 grow place-items-center px-1 font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:grow-0 lg:px-5 lg:text-[30px]'
 
 // The header with the account and the main pages, the same on each page. Only the board has its own header.
 const ITEM = 'block h-12 w-full px-4 text-left font-pixel text-[30px] leading-[48px] hover:bg-accent hover:text-on-accent'
