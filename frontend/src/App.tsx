@@ -3,7 +3,6 @@ import Shell from './components/Shell'
 import Admin from './pages/Admin'
 import Board from './pages/Board'
 import Home from './pages/Home'
-import Join from './pages/Join'
 import Leaderboard from './pages/Leaderboard'
 import Ops from './pages/Ops'
 import Phone from './pages/Phone'
@@ -21,7 +20,6 @@ export default function App() {
       {/* The ops view shows tool calls of hidden challenges, so it exists only on a local server. */}
       {import.meta.env.DEV && <Route path="/ops" element={<Ops />} />}
       <Route path="/signin" element={<SignIn />} />
-      <Route path="/join" element={<Join />} />
       <Route element={<Shell />}>
         <Route path="/" element={<Home />} />
         <Route path="/race/:id" element={<RacePage />} />
@@ -29,7 +27,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
-      {/* An old link goes to the race list. */}
+      {/* An old link, for example /join of a QR code, goes to the race list. */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
