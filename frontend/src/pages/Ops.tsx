@@ -6,7 +6,7 @@ import { clock, usd } from '../lib/format'
 import { type LiveRace, startRace, useForksToday, useIsAdmin, useNow, useRace, useRaceEvents, useRaces } from '../lib/queries'
 import { type Lane, RACE_MS, ROOMS, statusOf } from '../lib/race'
 
-// The ops view: what the runner really does in the 3 newest races. Disk, base room, one fork per horse,
+// The ops view: what the runner really does in each race that is not over. Disk, base room, one fork per horse,
 // each model step and each tool call. Only an admin gets the events, and the route exists only on a local server.
 
 const MAX_STEPS = 40
@@ -458,6 +458,12 @@ function RaceGraph({ view, events, now, onError }: { view: LiveRace; events: Rac
   )
 }
 
+// One race of the overview. It loads its own race, so the overview shows each race that is not over.
+function RaceBox({ id, events, now, onError }: { id: number; events: RaceEvent[]; now: number; onError: (text: string) => void }) {
+  const { data: view } = useRace(id)
+  return view ? <RaceGraph view={view} events={events} now={now} onError={onError} /> : null
+}
+
 export default function Ops() {
   const { data: admin } = useIsAdmin()
   const { data: races } = useRaces()
@@ -468,14 +474,14 @@ export default function Ops() {
   // /ops?race=12 shows the machines of race 12.
   const picked = Number(useSearchParams()[0].get('race'))
 
-  // The races that run, then the open races, then the newest settled races. Always 3 hooks, so the order of hooks is fixed.
+  // Each race that is not over: the races that run, then the open races, the newest first.
+  // With fewer than 3 of them, the newest finished races fill the row.
   const rank = { running: 0, open: 1, settled: 2 }
   const ids = (races ?? [])
     .slice()
-    .sort((a, b) => rank[a.race.status] - rank[b.race.status] || (a.race.status === 'settled' ? b.race.id - a.race.id : a.race.id - b.race.id))
-    .slice(0, 3)
+    .sort((a, b) => rank[a.race.status] - rank[b.race.status] || b.race.id - a.race.id)
+    .filter(({ race }, i) => race.status !== 'settled' || i < 3)
     .map(({ race }) => race.id)
-  const views = [useRace(ids[0]).data, useRace(ids[1]).data, useRace(ids[2]).data].filter((view) => !!view)
 
   if (admin === undefined) return <p className="p-6 text-muted">Loading</p>
   if (!admin)
@@ -489,17 +495,23 @@ export default function Ops() {
       </p>
     )
 
-  const running = views.filter((view) => view.race.status === 'running').flatMap((view) => view.lanes)
-  const names = new Map(views.flatMap((view) => view.lanes.map((lane) => [lane.horse.id, lane.horse.name] as const)))
+  // The numbers of the header come from the events of the races that run.
+  const live = new Set((races ?? []).filter(({ race }) => race.status === 'running').map(({ race }) => race.id))
+  const running = events.filter((event) => live.has(event.race_id))
+  const fork = (event: RaceEvent) => `${event.race_id} ${event.horse_id}`
+  const ended = new Set(running.filter((event) => ENDS.includes(event.kind)).map(fork))
+  const alive = running.filter((event) => event.kind === 'fork_created' && !ended.has(fork(event))).length
+  const cost = running.reduce((sum, event) => sum + (event.kind === 'step' ? Number(event.cost_usd ?? 0) : 0), 0)
+  const names = new Map((races ?? []).flatMap(({ horses }) => horses.map((horse) => [horse.id, horse.name] as const)))
   const onError = (text: string) => {
     alert(text)
     client.invalidateQueries({ queryKey: ['races'] })
   }
   const age = events[0] ? now - Date.parse(events[0].at) : Infinity
   const numbers = [
-    ['Sandboxes alive', String(running.filter((lane) => lane.entry.state === 'running').length)],
+    ['Sandboxes alive', String(alive)],
     ['Forks today', String(forks)],
-    ['Cost of running races', usd(running.reduce((sum, lane) => sum + Number(lane.entry.cost_usd), 0))],
+    ['Cost of running races', usd(cost)],
     ['Runner', age < 15_000 ? 'working' : events[0] ? `quiet for ${clock(age)}` : 'no event yet'],
     ['Disk', 'derby'],
   ]
@@ -530,12 +542,14 @@ export default function Ops() {
       </header>
       {/* /ops?race=12 shows only race 12, on the full width. */}
       {picked ? <Detail key={picked} id={picked} events={events} now={now} onError={onError} /> : null}
-      <div className={`min-h-0 flex-1 items-start gap-3 xl:grid-cols-[repeat(3,minmax(0,1fr))_360px] ${picked ? 'hidden' : 'grid'}`}>
-        {views.map((view) => (
-          <RaceGraph key={view.race.id} view={view} events={events} now={now} onError={onError} />
-        ))}
+      <div className={`min-h-0 flex-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_360px] ${picked ? 'hidden' : 'grid'}`}>
+        <div className="grid items-start gap-3 xl:grid-cols-3">
+          {ids.map((id) => (
+            <RaceBox key={id} id={id} events={events} now={now} onError={onError} />
+          ))}
+        </div>
         {/* The events of the runner, newest first. */}
-        <ol className="max-h-[calc(100vh-130px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5 xl:col-start-4">
+        <ol className="max-h-[calc(100vh-130px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5">
           {events.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
           {events.slice(0, 200).map((event) => (
             <li key={event.id} className="truncate">
