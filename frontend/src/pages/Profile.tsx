@@ -54,9 +54,7 @@ function Editor({ player }: { player: Player }) {
               <button type="button" aria-label={`Previous ${part.name}`} onClick={() => step(-1)} className={STEP}>
                 &lt;
               </button>
-              <p className="grow text-center font-pixel text-[30px] leading-none">
-                {part.name} <span className="text-muted">{rider[i] + 1}</span>
-              </p>
+              <p className="grow text-center font-pixel text-[30px] leading-none">{part.name}</p>
               <button type="button" aria-label={`Next ${part.name}`} onClick={() => step(1)} className={STEP}>
                 &gt;
               </button>
