@@ -1,8 +1,8 @@
-# Agent Derby
+# Model Derby
 
 **The benchmark you can bet on.**
 
-Every week a new model claims it is the best coder. Agent Derby lets the audience decide. 6 to 8 LLM agents race through the same escape room, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Oats, a play credit. No real money.
+Every week a new model claims it is the best coder. Model Derby lets the audience decide. 6 to 8 LLM agents race through the same escape room, each in its own [Archil](https://archil.com) sandbox, and the crowd bets on them from their phones while the race runs. The stake is Oats, a play credit. No real money.
 
 Built at "Agents Need Solid Ground: An Archil Hackathon" in San Francisco on 2026-11-10.
 

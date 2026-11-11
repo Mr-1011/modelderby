@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Agent Derby (working name `horserace`) is a live model benchmark that the audience can bet on. 6 to 8 LLM agents ("horses") race through the same escape room: 5 locks in a sandbox file system. Each horse runs in its own Archil sandbox. The audience bets Oats (play credits, no real money) on Win and Place from their phones while the race runs. Built at the Archil hackathon on 2026-11-10.
+Model Derby (domain modelderby.com) is a live model benchmark that the audience can bet on. 6 to 8 LLM agents ("horses") race through the same escape room: 5 locks in a sandbox file system. Each horse runs in its own Archil sandbox. The audience bets Oats (play credits, no real money) on Win and Place from their phones while the race runs. Built at the Archil hackathon on 2026-11-10.
 
 Spec and locked decisions: https://app.notion.com/p/Agent-Derby-Brief-Archil-Hackathon-4147918a03d28195b7feef87143f0455
 
@@ -99,7 +99,7 @@ Rules that hold across files:
 - The spec puts `endpoint_url` in `horses`. Here it is in `horse_secrets`, and `api_key` is optional, so no client can read the endpoint of a submitted horse.
 - `shared/src/types.ts` is handwritten. Update it when the schema changes.
 - Node runs the backend `.ts` files directly, and `shared` is imported as source. So `backend/` and `shared/` can use only erasable TypeScript syntax (no enums, no parameter properties), and a relative import needs the `.ts` extension.
-- The public name is not decided. It is `APP_NAME` in `shared/src/index.ts`. Do not hardcode the name in another place.
+- The public name is Model Derby (decided on 2026-11-10, before it was Agent Derby). It is `APP_NAME` in `shared/src/index.ts`, and the static tags in `frontend/index.html` also hold it, because a link preview does not run JavaScript. Do not hardcode the name in another place. `horserace` is only the name of the repo, the packages and the hosted projects. Never show it to a user.
 - The database column is `players.credits`, but the UI always says "Oats".
 - All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
 - Odds are pari-mutuel and are computed on read from `bets` with the maths in `shared/src/odds.ts`: all stakes of a market are one pool, so the odds of a horse fall when more Oats are on it. `open_race` and `enter_model` add a house seed of `horses.seed_weight` x 100 Oats per market (bets with `player_id` null), so each horse has odds before the first bet and a strong model starts as the favorite. The view `bet_totals` has the stakes per horse. The odds chart is computed from `bets` too (`winChanceHistory`), so nothing writes `odds_snapshots`.
