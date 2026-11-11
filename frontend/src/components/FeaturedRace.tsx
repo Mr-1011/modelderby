@@ -37,8 +37,8 @@ export default function FeaturedRace({ id, now }: { id: number; now: number }) {
               <div className="flex justify-center pb-1 pt-5" style={grass(2)}>
                 <Horse id={horse.id} scale={2} idle />
               </div>
-              <div className="p-3 text-center">
-                <p className="truncate font-pixel text-[22.5px] leading-none">{horse.name}</p>
+              <div className="px-1 py-3 text-center">
+                <p className="truncate font-pixel text-[15px] leading-none lg:text-[22.5px]">{horse.name}</p>
                 <p className="mt-1 font-pixel text-[30px] leading-none text-accent">{odds(win)}</p>
               </div>
             </li>
