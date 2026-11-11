@@ -18,6 +18,7 @@ One git repo and one pnpm workspace with three packages:
 - `backend/`: the race runner, a long-lived Node process. Hosted on Railway. `backend/supabase/` holds the Supabase config and the migrations.
 - `shared/`: the row types and the app name, used by both. The Win and Place odds and payout maths also go here.
 - `pool/` (git-ignored, never commit it): the private challenge pool with generators, checkers and answers.
+- `backups/` (git-ignored, never commit it): local exports of the database, with player data and the diffs of hidden challenges. `backups/wipe.sql` deletes the races, the bets and the guest accounts of the test phase.
 
 `README.md` is for public readers. Update it when setup, commands or behavior change.
 
