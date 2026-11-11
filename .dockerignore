@@ -1,0 +1,6 @@
+# Secrets and the private challenge pool must never get into the image.
+**/.env*
+pool
+.git
+**/node_modules
+frontend
