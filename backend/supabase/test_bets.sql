@@ -22,6 +22,11 @@ begin
   assert (select count(*) from public.players where id in (a1, a2) and credits = 1000 and nickname = 'Ada') = 2, 'two players named Ada';
   assert (select nickname from public.players where id = '00000000-0000-0000-0000-0000000000a3') like 'player-%', 'fallback nickname';
 
+  -- The payouts below use these seed weights. A later tuning of the house horses must not change them.
+  update public.horses h set seed_weight = w.weight
+  from (values ('h1', 5), ('h2', 5), ('h3', 4), ('h4', 3), ('h5', 2), ('h6', 1)) as w (id, weight)
+  where h.id = w.id;
+
   -- A new race has the 6 house horses and a seed of 2,000 Oats per market.
   v_race := public.open_race('vault', now() + interval '10 minutes');
   assert (select count(*) from public.entries where race_id = v_race) = 6, '6 entries';
