@@ -63,6 +63,19 @@ export type Entry = {
   diff: string | null
 }
 
+// What the runner did in a race, for the ops view. Only an admin can read these rows.
+export type RaceEvent = {
+  id: number
+  race_id: number
+  horse_id: string | null // null = an event of the whole race
+  at: string
+  kind: 'base_built' | 'fork_created' | 'step' | 'tool_call' | 'checkpoint' | 'solved' | 'out' | 'timeout' | 'failed' | 'settled'
+  text: string | null
+  cost_usd: number | null
+  tokens_in: number | null
+  tokens_out: number | null
+}
+
 export type OddsSnapshot = {
   race_id: number
   at: string
