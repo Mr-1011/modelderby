@@ -1,4 +1,4 @@
-import { APP_NAME, type Horse as HorseRow } from '@horserace/shared'
+import { APP_NAME, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import GoogleButton from '../components/GoogleButton'
@@ -48,10 +48,12 @@ function Join({ onJoin, demo }: { onJoin: (nickname: string) => void; demo: bool
   )
 }
 
+// pays gives what a stake pays. It is less than stake x odds, because the stake moves the odds of its own pool.
 function BetSlip({
-  horse, market, price, credits, onBet, onClose,
+  horse, market, price, pays, credits, onBet, onClose,
 }: {
-  horse: HorseRow; market: Market; price: number; credits: number; onBet: (amount: number) => void; onClose: () => void
+  horse: HorseRow; market: Market; price: number; pays: (amount: number) => number
+  credits: number; onBet: (amount: number) => void; onClose: () => void
 }) {
   const [amount, setAmount] = useState(Math.min(100, credits))
   return (
@@ -91,7 +93,7 @@ function BetSlip({
             Bet {oats(amount)} Oats
           </button>
           <p className="mt-3 text-[14px] text-muted">
-            Pays about {oats(amount * price)} Oats. The odds move until betting closes.
+            Pays about {oats(pays(amount))} Oats. The odds move until betting closes.
           </p>
         </div>
       </div>
@@ -100,10 +102,12 @@ function BetSlip({
 }
 
 // The race page without its data source: the live page and the demo both render it.
+// stakes are the Oats on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
 export function PhoneView({
-  view, player, bets, onJoin, onBet, demo = false,
+  view, player, bets, onJoin, onBet, demo = false, stakes,
 }: {
   view: RaceView
+  stakes?: { win: Stakes; place: Stakes }
   player: Player | null
   bets: MyBet[]
   onJoin: (nickname: string) => void
@@ -245,6 +249,14 @@ export function PhoneView({
           horse={slipLane.horse}
           market={slip.market}
           price={slipLane[slip.market]}
+          pays={(amount) => {
+            const id = slip.horse
+            if (!stakes) return amount * slipLane[slip.market]
+            // Exact for Win if no bet comes after it. For Place it is an estimate, because the other placed horses are not known.
+            if (slip.market === 'win') return winPayout({ ...stakes.win, [id]: stakes.win[id] ?? 0 }, id, amount)
+            const place = { ...stakes.place, [id]: (stakes.place[id] ?? 0) + amount }
+            return amount * placeOdds(place, id, lanes.length, race.place_count)
+          }}
           credits={player.credits}
           onClose={() => setSlip(null)}
           onBet={(amount) => {

@@ -28,6 +28,7 @@ export default function RacePage() {
     <>
       <PhoneView
         view={view}
+        stakes={view}
         player={player ?? null}
         bets={mine
           .map((bet) => ({ horse: bet.outcome, market: bet.market, amount: bet.amount, payout: bet.payout }))
