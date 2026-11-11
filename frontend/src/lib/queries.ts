@@ -143,7 +143,11 @@ export function useRace(id: number | undefined) {
     }
     const channel = supabase
       .channel(`race-${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'races', filter: `id=eq.${id}` }, reload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'races', filter: `id=eq.${id}` }, () => {
+        reload()
+        // The settle pays the players, so the balance is new too.
+        client.invalidateQueries({ queryKey: ['player'] })
+      })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'entries', filter: `race_id=eq.${id}` }, reload)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bets', filter: `race_id=eq.${id}` }, reload)
       .subscribe()
