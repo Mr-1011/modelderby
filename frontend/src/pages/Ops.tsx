@@ -1,10 +1,10 @@
 import type { RaceEvent } from '@horserace/shared'
 import { useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { clock, usd } from '../lib/format'
 import { type LiveRace, startRace, useForksToday, useIsAdmin, useNow, useRace, useRaceEvents, useRaces } from '../lib/queries'
-import { type Lane, ROOMS, statusOf } from '../lib/race'
+import { type Lane, RACE_MS, ROOMS, statusOf } from '../lib/race'
 
 // The ops view: what the runner really does in the 3 newest races. Disk, base room, one fork per horse,
 // each model step and each tool call. Only an admin gets the events, and the route exists only on a local server.
@@ -111,24 +111,72 @@ function Start({ view, now, onError }: { view: LiveRace; now: number; onError: (
 
 // The files that the runner writes to the disk for each horse. The first one grows during the race.
 const FILES = ['log.jsonl', 'final.diff', 'room.tar.gz', 'result.json']
+const ENDS = ['solved', 'out', 'timeout', 'failed']
+const ms = (event: RaceEvent) => Date.parse(event.at)
+const seconds = (span: number) => `${(span / 1000).toFixed(1)} s`
+// How an event shows on the time line of its machine.
+const TICK: Partial<Record<RaceEvent['kind'], string>> = {
+  fork_created: 'w-1 bg-accent',
+  tool_call: 'w-0.5 bg-accent',
+  checkpoint: 'w-1 bg-text',
+  solved: 'w-2 bg-text',
+  out: 'w-2 bg-muted',
+  timeout: 'w-2 bg-muted',
+  failed: 'w-2 bg-muted',
+}
 
-// One machine of the detail view: the fork of one horse. order is its place in the order of the forks.
-function Machine({ lane, events, view, now, order, edge }: { lane: Lane; events: RaceEvent[]; view: LiveRace; now: number; order: number; edge: string }) {
+type Stage = 'todo' | 'now' | 'done'
+
+// One step in the life of a machine: muted before it happens, its mark blinks while it happens, then it stays lit.
+function Step({ name, value, stage }: { name: string; value: string; stage: Stage }) {
+  return (
+    <p className={`flex justify-between gap-2 text-[11px] leading-4 ${stage === 'todo' ? 'text-muted' : ''}`}>
+      <span className={stage === 'todo' ? '' : 'text-accent'}>
+        <span className={stage === 'now' ? 'animate-blink' : ''}>{stage === 'done' ? '+' : stage === 'now' ? '>' : '.'}</span> {name}
+      </span>
+      <span className="truncate">{value}</span>
+    </p>
+  )
+}
+
+// One machine of the detail view: the fork of one horse, from the events up to the playhead.
+// order is its place in the order of the forks: the machines come up in that order.
+// logged is false for an old race with no events. The entry then gives the end state.
+function Machine({
+  lane,
+  seen,
+  race,
+  logged,
+  settled,
+  first,
+  order,
+  column,
+  edge,
+}: {
+  lane: Lane
+  seen: RaceEvent[]
+  race: LiveRace['race']
+  logged: boolean
+  settled: boolean
+  first: number
+  order: number
+  column: number
+  edge: string
+}) {
   const { horse, entry } = lane
-  const { race } = view
-  const mine = events.filter((event) => event.horse_id === horse.id)
+  const mine = seen.filter((event) => event.horse_id === horse.id)
+  const fork = mine.find((event) => event.kind === 'fork_created')
   const steps = mine.filter((event) => event.kind === 'step')
   const calls = mine.filter((event) => event.kind === 'tool_call')
-  const flash = mine.find((event) => ['tool_call', 'checkpoint', 'solved', 'out'].includes(event.kind))
-  // The runner has no events for an old race. The entry then still has the id of the machine.
-  const [sandbox, ms] = mine.find((event) => event.kind === 'fork_created')?.text?.split(' ') ?? [entry.sandbox_id]
-  const racing = race.status === 'running'
-  const state = stateText(lane, racing)
-  const elapsed = entry.solved_ms ?? (racing && race.started_at ? now - Date.parse(race.started_at) : 0)
-  const tokensIn = steps.reduce((sum, event) => sum + (event.tokens_in ?? 0), 0)
-  const tokensOut = steps.reduce((sum, event) => sum + (event.tokens_out ?? 0), 0)
-  const lines = calls.length ? calls.slice(0, 8).reverse().map((event) => event.text ?? '') : entry.last_step ? [entry.last_step] : []
-  const logged = entry.steps > 0
+  const last = mine.find((event) => ENDS.includes(event.kind))
+  const flash = mine.find((event) => event.kind === 'checkpoint' || ENDS.includes(event.kind))
+  const [sandbox, forkMs] = logged ? (fork?.text?.split(' ') ?? []) : [entry.sandbox_id ?? undefined]
+  const count = logged ? steps.length : entry.steps
+  const cost = logged ? steps.reduce((sum, event) => sum + Number(event.cost_usd ?? 0), 0) : Number(entry.cost_usd)
+  const progress = logged ? Number(mine.find((event) => event.kind === 'checkpoint' || event.kind === 'solved')?.text ?? 0) : entry.progress
+  const end = logged ? last?.kind : entry.state === 'escaped' ? 'solved' : ENDS.includes(entry.state) ? entry.state : undefined
+  const state = !sandbox ? 'no machine' : settled ? 'removed' : (end ?? 'running')
+  const stage = (done: boolean, now: boolean): Stage => (done ? 'done' : now ? 'now' : 'todo')
   const delay = { animationDelay: `${order * 150}ms` }
   return (
     <li className="min-w-0">
@@ -138,40 +186,43 @@ function Machine({ lane, events, view, now, order, edge }: { lane: Lane; events:
       <div className="px-1">
         {sandbox ? (
           <div className="overflow-hidden">
-            <div className={`relative h-84 animate-rise overflow-hidden border-2 border-accent p-2 ${entry.state === 'running' ? 'bg-panel' : ''}`} style={delay}>
+            {/* A machine that is removed loses its orange outline: only its files on the disk stay. */}
+            <div className={`relative h-84 animate-rise overflow-hidden border-2 p-2 ${settled ? 'border-line' : 'border-accent'} ${state === 'running' ? 'bg-panel' : ''}`} style={delay}>
               <div className="pointer-events-none absolute inset-0 animate-flash bg-accent" style={delay} />
               {flash && <div key={flash.id} className="pointer-events-none absolute inset-0 animate-flash bg-accent" />}
               <div className="flex items-baseline justify-between gap-2">
-                <p className="font-pixel text-[15px] uppercase leading-none text-accent">VM {order + 1}</p>
+                <p className="font-pixel text-[15px] uppercase leading-none text-accent">VM {column + 1}</p>
                 <p className={`font-pixel text-[15px] uppercase leading-none ${state === 'running' || state === 'solved' ? 'text-accent' : 'text-muted'}`}>{state}</p>
               </div>
               <p className="mt-1 truncate text-[11px] text-muted">{sandbox}</p>
-              <p className="text-[11px] text-muted">{ms ? `fork ${ms} ms` : 'forked'}</p>
               <p className="mt-2 truncate font-pixel text-[22.5px] leading-none">{horse.name}</p>
               <p className="mt-1 truncate text-[11px] text-muted">
                 {horse.model}
                 {horse.reasoning_effort && ` / ${horse.reasoning_effort}`}
               </p>
               <div className="mt-2 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1" aria-label={`Progress ${entry.progress} of 100`}>
+                <div className="flex items-center gap-1" aria-label={`Progress ${progress} of 100`}>
                   {[20, 40, 60, 80, 100].map((mark) => (
-                    <div key={mark} className={`size-3 border-2 ${entry.progress >= mark ? 'border-accent bg-accent' : 'border-line'}`} />
+                    <div key={mark} className={`size-3 border-2 ${progress >= mark ? 'border-accent bg-accent' : 'border-line'}`} />
                   ))}
                 </div>
-                <p className="font-pixel text-[30px] leading-none">{usd(entry.cost_usd)}</p>
+                <p className="font-pixel text-[30px] leading-none">{usd(cost)}</p>
               </div>
-              <p className="mt-1 truncate text-[11px] text-muted">
-                step {entry.steps}/{MAX_STEPS}, {clock(elapsed)}
-              </p>
-              <p className="truncate text-[11px] text-muted">
-                {steps.length ? `${kilo(tokensIn)} in ${kilo(tokensOut)} out, ${calls.length} calls` : `${kilo(entry.tokens)} tokens`}
-              </p>
+              <div className="mt-2">
+                <Step name="fork" value={forkMs ? `${forkMs} ms` : 'from the base'} stage="done" />
+                <Step name="run" value={`step ${count}/${MAX_STEPS}${logged ? `, ${calls.length} commands` : ''}`} stage={stage(!!end, true)} />
+                <Step name="check" value={`${progress} / 100`} stage={stage(!!end, count > 0)} />
+                <Step name="end" value={end ? `${end}${last ? ` at T+${seconds(ms(last) - first)}` : ''}` : ''} stage={stage(!!end, false)} />
+                <Step name="save" value={settled ? `${FILES.length} files` : count > 0 ? 'log.jsonl' : ''} stage={stage(settled, count > 0)} />
+                <Step name="remove" value={settled ? 'machine deleted' : ''} stage={stage(settled, false)} />
+              </div>
               <div className="mt-1 text-[11px] leading-4">
-                {lines.map((line, i) => (
-                  <p key={i} className={`truncate ${i === lines.length - 1 ? '' : 'text-muted'}`}>
-                    $ {line}
+                {calls.slice(0, 5).reverse().map((event, i, list) => (
+                  <p key={event.id} className={`truncate ${i === list.length - 1 ? 'animate-type' : 'text-muted'}`}>
+                    $ {event.text}
                   </p>
                 ))}
+                {!logged && entry.last_step && <p className="truncate">$ {entry.last_step}</p>}
               </div>
             </div>
           </div>
@@ -181,13 +232,13 @@ function Machine({ lane, events, view, now, order, edge }: { lane: Lane; events:
           </div>
         )}
         {/* What the runner keeps of this machine on the disk. */}
-        <div className={`mx-auto h-3 w-0.5 ${logged ? 'bg-accent' : 'bg-line'}`} />
-        <div className={`border-2 p-2 text-[11px] leading-4 ${logged ? 'border-accent' : 'border-line'}`}>
+        <div className={`mx-auto h-3 w-0.5 ${count > 0 ? 'bg-accent' : 'bg-line'}`} />
+        <div className={`border-2 p-2 text-[11px] leading-4 ${count > 0 ? 'border-accent' : 'border-line'}`}>
           <p className="truncate text-muted">
-            races/{race.id}/{horse.id}/
+            derby/races/{race.id}/{horse.id}/
           </p>
           {FILES.map((file, i) => (
-            <p key={file} className={(i === 0 ? logged : race.status === 'settled') ? '' : 'text-muted'}>
+            <p key={file} className={(i === 0 ? count > 0 : settled) ? '' : 'text-muted'}>
               {file}
             </p>
           ))}
@@ -197,25 +248,66 @@ function Machine({ lane, events, view, now, order, edge }: { lane: Lane; events:
   )
 }
 
-// One race in detail: the disk, the base room that is built once, and one machine per horse that forks from it.
+// One race in detail, built from its events in the order in which they came: the disk, the base sandbox that is built once,
+// one machine per horse that forks from it, each command, each check, then the files on the disk and the end of the machines.
+// A finished race plays again from its first event. A race that runs shows each event when it comes.
 function Detail({ id, events, now, onError }: { id: number; events: RaceEvent[]; now: number; onError: (text: string) => void }) {
   const { data: view } = useRace(id)
-  // A new key mounts the graph again, so the forks come up again.
-  const [run, setRun] = useState(0)
+  // The playhead of a replay, as a time in ms. Without it the view is live.
+  const [head, setHead] = useState<number>()
+  const auto = useRef(false)
+  const mine = events.filter((event) => event.race_id === id)
+  const first = mine.length ? ms(mine.at(-1)!) : 0
+  const final = mine.length ? ms(mine[0]) : 0
+  const replay = head !== undefined
+  const status = view?.race.status
+  // A finished race plays one time when the view opens. A race that ends in front of the user does not play again.
+  useEffect(() => {
+    if (auto.current || !status || !first) return
+    auto.current = true
+    if (status === 'settled') setHead(first - 500)
+  }, [status, first])
+  // The full race plays in about 20 seconds.
+  useEffect(() => {
+    if (!replay) return
+    const timer = setInterval(() => setHead((time) => (time === undefined || time > final ? undefined : time + Math.max(50, (final - first) / 220))), 90)
+    return () => clearInterval(timer)
+  }, [replay, first, final])
+
   if (!view) return <p className="text-muted">Loading</p>
   const { race, lanes } = view
-  const mine = events.filter((event) => event.race_id === id)
-  const [, baseId, baseMs] = mine.find((event) => event.kind === 'base_built')?.text?.split(' ') ?? []
-  const built = !!baseId || race.status !== 'open'
+  const logged = mine.length > 0
+  const seen = replay ? mine.filter((event) => ms(event) <= head) : mine
+  const [, baseId, baseMs] = seen.find((event) => event.kind === 'base_built')?.text?.split(' ') ?? []
   // Oldest first: the order in which the machines came up.
-  const forks = mine.filter((event) => event.kind === 'fork_created').reverse()
-  const times = forks.map((event) => Number(event.text?.split(' ')[1]))
-  const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)?.horse.name
-  const numbers = [
-    ['Machines', String(lanes.filter((lane) => lane.entry.sandbox_id || forks.some((event) => event.horse_id === lane.horse.id)).length)],
-    ['Fork, average', forks.length ? `${Math.round(times.reduce((sum, ms) => sum + ms, 0) / forks.length)} ms` : '-'],
-    ['First to last fork', forks.length ? `${Date.parse(forks.at(-1)!.at) - Date.parse(forks[0].at)} ms` : '-'],
+  const forks = seen.filter((event) => event.kind === 'fork_created').reverse()
+  const ended = seen.filter((event) => ENDS.includes(event.kind))
+  const result = seen.find((event) => event.kind === 'settled')
+  const built = logged ? !!baseId : race.status !== 'open'
+  const forked = logged ? forks.length : lanes.filter((lane) => lane.entry.sandbox_id).length
+  const over = (logged ? ended.length : lanes.filter((lane) => !['waiting', 'running'].includes(lane.entry.state)).length) >= lanes.length && forked > 0
+  const settled = logged ? !!result : race.status === 'settled'
+  const solved = logged ? ended.filter((event) => event.kind === 'solved').length : lanes.filter((lane) => lane.entry.state === 'escaped').length
+  const name = (horse: string | null | undefined) => lanes.find((lane) => lane.horse.id === horse)?.horse.name
+  const winner = name(race.winner_horse)
+  const count = (kind: RaceEvent['kind']) => seen.filter((event) => event.kind === kind).length
+  const phases: [string, string, boolean][] = [
+    ['Disk', `derby/rooms/${race.task}/`, true],
+    ['Base sandbox', baseId ? `built in ${baseMs} ms` : built ? 'built' : 'not built', built],
+    ['Fork', `${forked} of ${lanes.length} machines${forks.length > 1 ? `, all in ${ms(forks.at(-1)!) - ms(forks[0])} ms` : ''}`, forked >= lanes.length],
+    ['Run', logged ? `${count('step')} steps, ${count('tool_call')} commands` : `${lanes.reduce((sum, lane) => sum + lane.entry.steps, 0)} steps`, over],
+    ['Check', `${solved} of ${lanes.length} solved`, over],
+    ['Save', settled ? `${lanes.length * FILES.length} files on the disk` : forked ? 'the logs grow' : '', settled],
+    ['Settle', settled && winner ? `winner ${winner}` : '', settled],
   ]
+  const current = race.status === 'open' && !built ? -1 : phases.findIndex(([, , done]) => !done)
+  // The checks and the logs go on while the machines run.
+  const live = (i: number) => i === current || (current === 3 && (i === 4 || i === 5))
+  // The time line goes from the first event to the last one. For a race that runs, it goes to the time limit.
+  const to = settled || replay ? final : Math.max(now, (forks[0] ? ms(forks[0]) : first) + RACE_MS)
+  const x = (time: number) => Math.min(100, Math.max(0, ((time - first) / (to - first)) * 100))
+  const clockNow = replay ? head : race.status === 'running' ? now : final
+  const newest = seen[0]
   return (
     <section className="min-w-0 border-2 border-accent p-3">
       <div className="flex flex-wrap items-end gap-x-10 gap-y-3">
@@ -228,47 +320,95 @@ function Detail({ id, events, now, onError }: { id: number; events: RaceEvent[];
           </p>
           <p className="mt-1 text-[12px] text-muted">{statusOf(race, now, winner)}</p>
         </div>
-        {numbers.map(([label, value]) => (
-          <div key={label}>
-            <p className={LABEL}>{label}</p>
-            <p className="mt-1 font-pixel text-[30px] leading-none">{value}</p>
-          </div>
-        ))}
-        <div className="ml-auto flex gap-2">
-          <button onClick={() => setRun(run + 1)} className="h-9 border-2 border-text px-3 font-pixel text-[15px] uppercase leading-none">
-            Replay
-          </button>
+        <div>
+          <p className={LABEL}>{replay ? 'Replay' : race.status === 'running' ? 'Live' : 'Time'}</p>
+          <p className="mt-1 font-pixel text-[30px] leading-none">{logged ? `T+${seconds(Math.max(0, clockNow - first))}` : '-'}</p>
+        </div>
+        {/* The event that came last, so each change has a name. */}
+        <div className="min-w-0 flex-1">
+          <p className={LABEL}>Now</p>
+          <p className="mt-1 truncate font-pixel text-[30px] leading-none">
+            {newest ? (
+              <>
+                <span className="text-accent">{newest.kind.replace('_', ' ')}</span> {name(newest.horse_id)}{' '}
+                <span className="text-muted">{newest.kind === 'tool_call' ? `$ ${newest.text}` : newest.kind === 'settled' ? name(newest.text) : newest.text}</span>
+              </>
+            ) : (
+              <span className="text-muted">{logged ? 'start' : 'no events for this race'}</span>
+            )}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {logged && (
+            <button onClick={() => setHead(replay ? undefined : first - 500)} className="h-9 border-2 border-text px-3 font-pixel text-[15px] uppercase leading-none">
+              {replay ? 'Skip' : 'Replay'}
+            </button>
+          )}
           <Start view={view} now={now} onError={onError} />
         </div>
       </div>
-      <p className="mt-2 text-[12px] text-muted">One runner process holds all agent loops. A machine gets work only when its horse calls bash.</p>
 
-      <div key={run} className="mt-3">
-        <div className="mx-auto w-80">
-          <Box label="Disk" value={`derby  rooms/${race.task}/`} lit />
-          <div className={`mx-auto h-3 w-0.5 ${built ? 'bg-accent' : 'bg-line'}`} />
-          <div className={built ? 'animate-wipe' : ''}>
-            <Box label="Base sandbox" value={baseId ? `${baseId}  built in ${baseMs} ms` : built ? race.task : 'not built'} lit={built} />
-          </div>
-          <div className={`mx-auto h-3 w-0.5 ${built ? 'bg-accent' : 'bg-line'}`} />
-        </div>
-        <ul className="grid" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(0, 1fr))` }}>
-          {lanes.map((lane, i) => {
-            const order = forks.findIndex((event) => event.horse_id === lane.horse.id)
+      {/* The steps of the race from left to right. A step is muted before it happens, and it flashes when it is done. */}
+      <ol className="mt-3 flex items-stretch">
+        {phases.map(([label, value, done], i) => (
+          <li key={label} className="flex min-w-0 flex-1 items-center">
+            {i > 0 && <div className={`h-0.5 w-3 shrink-0 ${done || live(i) ? 'bg-accent' : 'bg-line'}`} />}
+            <div className={`relative h-full min-w-0 flex-1 border-2 px-2 py-1 ${done || live(i) ? 'border-accent' : 'border-line'} ${live(i) ? 'bg-panel' : ''}`}>
+              {done && <div className="pointer-events-none absolute inset-0 animate-flash bg-accent" />}
+              <p className={`font-pixel text-[15px] uppercase leading-none ${done || live(i) ? 'text-accent' : 'text-muted'}`}>
+                0{i + 1} {label} {live(i) && <span className="animate-blink">&gt;</span>}
+              </p>
+              <p className={`mt-1 h-4 truncate text-[12px] leading-4 ${done || live(i) ? '' : 'text-muted'}`}>{value}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <ul className="mt-3 grid" style={{ gridTemplateColumns: `repeat(${lanes.length}, minmax(0, 1fr))` }}>
+        {lanes.map((lane, i) => {
+          const order = forks.findIndex((event) => event.horse_id === lane.horse.id)
+          return (
+            <Machine
+              key={lane.horse.id}
+              lane={lane}
+              seen={seen}
+              race={race}
+              logged={logged}
+              settled={settled}
+              first={first}
+              order={order < 0 ? i : order}
+              column={i}
+              edge={i === 0 ? 'ml-[50%]' : i === lanes.length - 1 ? 'mr-[50%]' : ''}
+            />
+          )
+        })}
+      </ul>
+
+      {/* One time line per machine: the fork, each command, each check and the end. All machines work at the same time. */}
+      {logged && (
+        <div className="mt-3 border-2 border-line p-2">
+          {lanes.map((lane) => {
+            const own = seen.filter((event) => event.horse_id === lane.horse.id)
+            const fork = own.find((event) => event.kind === 'fork_created')
+            const end = own.find((event) => ENDS.includes(event.kind))
             return (
-              <Machine
-                key={lane.horse.id}
-                lane={lane}
-                events={mine}
-                view={view}
-                now={now}
-                order={order < 0 ? i : order}
-                edge={i === 0 ? 'ml-[50%]' : i === lanes.length - 1 ? 'mr-[50%]' : ''}
-              />
+              <div key={lane.horse.id} className="flex items-center gap-2">
+                <p className="w-40 shrink-0 truncate text-[11px] leading-4 text-muted">{lane.horse.name}</p>
+                <div className="relative h-4 min-w-0 flex-1">
+                  {/* The time in which the machine is alive. */}
+                  {fork && <div className="absolute top-1.5 h-1 bg-line" style={{ left: `${x(ms(fork))}%`, width: `${x(end ? ms(end) : clockNow) - x(ms(fork))}%` }} />}
+                  {own.map((event) => TICK[event.kind] && <div key={event.id} className={`absolute top-0 h-full ${TICK[event.kind]}`} style={{ left: `${x(ms(event))}%` }} />)}
+                  {!settled && <div className="absolute top-0 h-full w-px bg-text" style={{ left: `${x(clockNow)}%` }} />}
+                </div>
+              </div>
             )
           })}
-        </ul>
-      </div>
+          <p className="mt-1 flex justify-between pl-42 text-[11px] leading-4 text-muted">
+            <span>T+0</span>
+            <span>T+{seconds(to - first)}</span>
+          </p>
+        </div>
+      )}
     </section>
   )
 }
@@ -345,7 +485,6 @@ export default function Ops() {
 
   const running = views.filter((view) => view.race.status === 'running').flatMap((view) => view.lanes)
   const names = new Map(views.flatMap((view) => view.lanes.map((lane) => [lane.horse.id, lane.horse.name] as const)))
-  const feed = picked ? events.filter((event) => event.race_id === picked) : events
   const onError = (text: string) => {
     alert(text)
     client.invalidateQueries({ queryKey: ['races'] })
@@ -369,16 +508,16 @@ export default function Ops() {
           </div>
         ))}
       </header>
-      <div className={`grid min-h-0 flex-1 items-start gap-3 ${picked ? 'xl:grid-cols-[minmax(0,1fr)_360px]' : 'xl:grid-cols-[repeat(3,minmax(0,1fr))_360px]'}`}>
-        {picked ? (
-          <Detail id={picked} events={events} now={now} onError={onError} />
-        ) : (
-          views.map((view) => <RaceGraph key={view.race.id} view={view} events={events} now={now} onError={onError} />)
-        )}
+      {/* /ops?race=12 shows only race 12, on the full width. */}
+      {picked ? <Detail key={picked} id={picked} events={events} now={now} onError={onError} /> : null}
+      <div className={`min-h-0 flex-1 items-start gap-3 xl:grid-cols-[repeat(3,minmax(0,1fr))_360px] ${picked ? 'hidden' : 'grid'}`}>
+        {views.map((view) => (
+          <RaceGraph key={view.race.id} view={view} events={events} now={now} onError={onError} />
+        ))}
         {/* The events of the runner, newest first. */}
-        <ol className={`max-h-[calc(100vh-130px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5 ${picked ? '' : 'xl:col-start-4'}`}>
-          {feed.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
-          {feed.slice(0, 200).map((event) => (
+        <ol className="max-h-[calc(100vh-130px)] overflow-y-auto border-2 border-line p-3 text-[12px] leading-5 xl:col-start-4">
+          {events.length === 0 && <li className="text-muted">No event yet. The runner writes events when a race starts.</li>}
+          {events.slice(0, 200).map((event) => (
             <li key={event.id} className="truncate">
               <span className="text-muted">{time(event.at)}</span> R{event.race_id}{' '}
               <span className={['step', 'tool_call'].includes(event.kind) ? 'text-muted' : 'text-accent'}>{event.kind}</span>{' '}
