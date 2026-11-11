@@ -7,6 +7,7 @@ import Home from './pages/Home'
 import Leaderboard from './pages/Leaderboard'
 import Phone from './pages/Phone'
 import RacePage from './pages/RacePage'
+import SignIn from './pages/SignIn'
 
 export default function App() {
   const { pathname, search } = useLocation()
@@ -16,6 +17,7 @@ export default function App() {
     <Routes>
       <Route path="/board" element={<Board />} />
       <Route path="/race/:id" element={<RacePage />} />
+      <Route path="/signin" element={<SignIn />} />
       <Route element={<Shell />}>
         <Route path="/" element={<Home />} />
         <Route path="/arena" element={<Arena />} />

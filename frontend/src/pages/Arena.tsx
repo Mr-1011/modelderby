@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import GoogleButton from '../components/GoogleButton'
+import SignInLink from '../components/SignInLink'
 import RaceCard from '../components/RaceCard'
 import { enterModel, type Model, useModels, useNow, useRaces, useSession } from '../lib/queries'
 
@@ -133,7 +133,7 @@ export default function Arena() {
               ) : horses.length >= MAX_HORSES ? (
                 <p className="text-[14px] text-muted">This race is full.</p>
               ) : session === null ? (
-                <GoogleButton long />
+                <SignInLink />
               ) : entering === race.id && models ? (
                 <EntryForm race={race.id} models={models} />
               ) : (

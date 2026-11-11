@@ -1,8 +1,8 @@
 import { APP_NAME, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import GoogleButton from '../components/GoogleButton'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Horse from '../components/Horse'
+import SignInLink from '../components/SignInLink'
 import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
@@ -17,36 +17,6 @@ export type MyBet = { horse: string; market: Market; amount: number; payout?: nu
 
 const BUTTON = 'h-14 border-2 border-text font-pixel text-[28px] leading-none disabled:border-line disabled:text-muted'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent disabled:bg-line disabled:text-muted'
-
-// Login is Google only, and only the button of Google starts it reliably. The demo has a button of its own.
-function Join({ onJoin, demo }: { onJoin: (nickname: string) => void; demo: boolean }) {
-  return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center p-4">
-      <h1 className="font-pixel text-[64px] leading-none">{APP_NAME}</h1>
-      <div className="mt-6 flex items-end justify-between border-y-4 border-text px-3 pb-1 pt-4" style={grass(2)}>
-        <Horse id="h3" scale={2} running />
-        <Horse id="h4" scale={2} running />
-        <Horse id="h1" scale={2} running />
-      </div>
-      <p className="mt-6 text-[17px] leading-relaxed">
-        AI models race through an escape room. You bet on them with Oats. Oats are free and are not real money.
-      </p>
-      <div className="mt-8">
-        {demo ? (
-          <button onClick={() => onJoin('')} className={PRIMARY}>
-            Sign in with Google
-          </button>
-        ) : (
-          <GoogleButton long />
-        )}
-      </div>
-      <p className="mt-3 text-[14px] text-muted">You start with 1,000 Oats.</p>
-      <Link to="/" className="mt-8 text-[15px] underline underline-offset-4">
-        All races
-      </Link>
-    </main>
-  )
-}
 
 // pays gives what a stake pays. It is less than stake x odds, because the stake moves the odds of its own pool.
 function BetSlip({
@@ -102,28 +72,27 @@ function BetSlip({
 }
 
 // The race page without its data source: the live page and the demo both render it.
+// The page is open without an account: player is null then, and a tap on the odds leads to the sign-in page.
 // stakes are the Oats on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
 export function PhoneView({
-  view, player, bets, onJoin, onBet, demo = false, stakes,
+  view, player, bets, onBet, stakes,
 }: {
   view: RaceView
   stakes?: { win: Stakes; place: Stakes }
   player: Player | null
   bets: MyBet[]
-  onJoin: (nickname: string) => void
   onBet: (horse: string, market: Market, amount: number) => void
-  demo?: boolean
 }) {
   const { race, lanes } = view
   const { data: models } = useModels()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
   const [slip, setSlip] = useState<{ horse: string; market: Market } | null>(null)
   const [now, setNow] = useState(Date.now)
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 250)
     return () => clearInterval(timer)
   }, [])
-
-  if (!player) return <Join onJoin={onJoin} demo={demo} />
 
   const open = race.status !== 'settled' && !race.betting_closed_at
   const winner = lanes.find((lane) => lane.horse.id === race.winner_horse)
@@ -138,12 +107,16 @@ export function PhoneView({
     <main className="pb-10">
       <header className="sticky top-0 z-[5] border-b-4 border-text bg-bg pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
         <div className="mx-auto max-w-6xl px-4">
-          <div className="flex items-baseline justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             {/* The way back to the race list. */}
             <Link to="/" className="font-pixel text-[34px] leading-none">
               {APP_NAME}
             </Link>
-            <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
+            {player ? (
+              <p className="font-pixel text-[34px] leading-none text-accent">{oats(player.credits)} Oats</p>
+            ) : (
+              <SignInLink />
+            )}
           </div>
           <div className="mt-2 flex items-baseline justify-between gap-4 text-[14px]">
             <p className="text-muted">
@@ -187,9 +160,9 @@ export function PhoneView({
               </div>
               <div className="p-3">
                 <p className="truncate font-pixel text-[26px] leading-none">{horse.name}</p>
-                <p className="mt-1.5 truncate text-[12px] text-muted">{horse.model}</p>
-                <p className="truncate text-[12px] text-muted">
-                  {horse.provider}
+                {/* The model id names the provider, so the provider has no line of its own. */}
+                <p className="mt-1.5 truncate text-[12px] text-muted">
+                  {horse.model}
                   {horse.reasoning_effort && `, ${horse.reasoning_effort} effort`}
                 </p>
                 <p className="truncate text-[12px] text-muted">
@@ -204,7 +177,7 @@ export function PhoneView({
                     <button
                       key={market}
                       disabled={!open || (mine !== undefined && mine !== horse.id)}
-                      onClick={() => setSlip({ horse: horse.id, market })}
+                      onClick={() => (player ? setSlip({ horse: horse.id, market }) : navigate('/signin', { state: { from: pathname } }))}
                       className="h-16 border-2 border-text leading-none disabled:border-line disabled:text-muted"
                     >
                       <span className="block text-[12px] text-muted">{market === 'win' ? 'Win' : 'Place'}</span>
@@ -221,7 +194,10 @@ export function PhoneView({
       <section className="mx-auto max-w-6xl px-4 pt-8">
         <h2 className="font-pixel text-[28px] leading-none">Your bets</h2>
         {bets.length === 0 && (
-          <p className="mt-3 text-[15px] text-muted">No bets yet. Pick one horse and tap its odds. You bet on one horse per race.</p>
+          <p className="mt-3 text-[15px] text-muted">
+            {player ? 'No bets yet. ' : 'Sign in to bet. You start with 1,000 Oats. '}
+            Pick one horse and tap its odds. You bet on one horse per race.
+          </p>
         )}
         <ul className="mt-3 max-w-md">
           {bets.map((bet, i) => (
@@ -244,7 +220,7 @@ export function PhoneView({
         </Link>
       </section>
 
-      {slip && slipLane && open && (
+      {player && slip && slipLane && open && (
         <BetSlip
           horse={slipLane.horse}
           market={slip.market}
@@ -271,17 +247,15 @@ export function PhoneView({
 
 function DemoPhone() {
   const view = useDemoRace()
-  const [player, setPlayer] = useState<Player | null>(null)
+  const [player, setPlayer] = useState<Player>({ nickname: 'You', credits: 1000 })
   const [bets, setBets] = useState<MyBet[]>([])
   return (
     <PhoneView
       view={view}
-      demo
       player={player}
       bets={bets}
-      onJoin={() => setPlayer({ nickname: 'You', credits: 1000 })}
       onBet={(horse, market, amount) => {
-        setPlayer((current) => current && { ...current, credits: current.credits - amount })
+        setPlayer((current) => ({ ...current, credits: current.credits - amount }))
         setBets((current) => [{ horse, market, amount }, ...current])
       }}
     />

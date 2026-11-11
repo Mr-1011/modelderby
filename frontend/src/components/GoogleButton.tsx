@@ -39,19 +39,24 @@ const load = () =>
     return google.accounts.id
   })())
 
-// For a button of our own. The browser can suppress this prompt, so prefer <GoogleButton />.
-export const signIn = async () => (await load()).prompt()
-
-// The button of Google. It is an iframe, so only these options change its look. long gives "Sign in with Google".
-export default function GoogleButton({ long = false }: { long?: boolean }) {
+// The button of Google, for the sign-in page. Only this button starts the sign-in reliably.
+// It is an iframe, so only these options change its look. The locale keeps its text in English, like the rest of the app.
+export default function GoogleButton() {
   const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     load().then(
       (id) =>
         ref.current &&
-        id.renderButton(ref.current, { theme: 'filled_black', shape: 'rectangular', size: 'large', text: long ? 'signin_with' : 'signin' }),
+        id.renderButton(ref.current, {
+          theme: 'filled_black',
+          shape: 'rectangular',
+          size: 'large',
+          text: 'continue_with',
+          locale: 'en',
+          width: '280',
+        }),
     )
-  }, [long])
+  }, [])
   // Without the light color scheme, the iframe gets a white box on a dark page.
   return <div ref={ref} className="h-10 [color-scheme:light]" />
 }

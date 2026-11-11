@@ -2,7 +2,7 @@ import { APP_NAME } from '@horserace/shared'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { oats } from '../lib/format'
 import { signOut, usePlayer, useSession } from '../lib/queries'
-import GoogleButton from './GoogleButton'
+import SignInLink from './SignInLink'
 
 const TAB =
   'grid h-14 place-items-center font-pixel text-[22px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:px-5 lg:text-[26px]'
@@ -30,8 +30,8 @@ export default function Shell() {
               Leaderboard
             </NavLink>
           </nav>
-          <div className="ml-auto flex items-baseline gap-4">
-            {session === null && <GoogleButton />}
+          <div className="ml-auto flex items-center gap-4">
+            {session === null && <SignInLink />}
             {player && (
               <>
                 <span className="hidden max-w-40 truncate text-[14px] text-muted lg:block">{player.nickname}</span>
