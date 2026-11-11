@@ -39,6 +39,10 @@ const stickers =
 
 const edge = (x: number, y: number) => x === 0 || y === 0 || x === 15 || y === 15
 
+// An image that is not a box: a function gives each of its pixels.
+const paint = (pixel: (x: number, y: number) => Pixel): Pixel[][] =>
+  Array.from({ length: N }, (_, y) => Array.from({ length: N }, (_, x) => pixel(x, y)))
+
 const ART: Record<string, () => Pixel[][]> = {
   // A safe: the door with its dial and handle is the left face.
   vault: () =>
@@ -68,6 +72,70 @@ const ART: Record<string, () => Pixel[][]> = {
   },
   // A cube puzzle with mixed stickers.
   cube: () => box({ top: stickers('TATMTATMT'), left: stickers('AMTTAMMTA'), right: stickers('MTAATMTAM') }),
+  // A dark box in five layers: four rings on top around a bright core, slits on the right, and the keyhole on the left.
+  blackbox: () =>
+    box({
+      top: (x, y) => {
+        const ring = Math.floor(Math.max(Math.abs(x - 7.5), Math.abs(y - 7.5)))
+        return ring === 7 ? 'T' : ring === 0 ? 'A' : ring === 3 || ring === 4 ? 'M' : 'L'
+      },
+      left: (x, y) => {
+        if (edge(x, y)) return 'T'
+        const hole = Math.hypot(x - 7.5, y - 5.5) < 2.3 || (y > 6 && y < 12 && Math.abs(x - 7.5) < 1 + (y - 7) / 4)
+        return hole ? 'A' : 'L'
+      },
+      right: (x, y) => (edge(x, y) ? 'T' : y % 3 === 1 && x > 3 && x < 12 ? 'M' : 'L'),
+    }),
+  // A ladybug from above: the shell with its spots and the line between the wings, the head, two feelers and six legs.
+  bughunt: () =>
+    paint((x, y) => {
+      const [dx, dy] = [x - 15.5, y - 18.5]
+      const side = Math.abs(dx)
+      if ((dx / 10.5) ** 2 + (dy / 11.5) ** 2 < 1) {
+        const spot = [[5, -5, 2.2], [6.2, 2, 2.4], [3.2, 7.5, 1.8]].some(([sx, sy, r]) => Math.hypot(side - sx, dy - sy) < r)
+        if (side < 1 || spot) return ['L', 0]
+        return ['A', dx + dy > 7 ? 2 : dx + dy > -4 ? 1 : 0]
+      }
+      if (Math.hypot(dx, y - 7) < 4.6) return [y === 4 && side > 1 && side < 3 ? 'T' : 'M', 0]
+      if (y < 3 && side === 5.5 - y) return ['M', 0]
+      // Each leg goes out from the shell and ends in a foot.
+      const leg = [[12, 13, -1], [19, 14, 1], [26, 12, 1]].some(
+        ([row, reach, foot]) => (y === row && side < reach) || (y === row + foot && side === reach - 0.5),
+      )
+      return leg ? ['M', 0] : null
+    }),
+  // A snail on a road: the shell with its spiral, the body with two eyes on stalks, and the marks of the lane.
+  slowlane: () =>
+    paint((x, y) => {
+      const [dx, dy] = [x - 19.5, y - 12.5]
+      const r = Math.hypot(dx, dy)
+      if (r < 9.6) {
+        const turn = (Math.atan2(dy, dx) / (2 * Math.PI) + 1) % 1
+        if (r < 8.4 && [0, 1, 2].some((n) => Math.abs(r - 3 * (turn + n)) < 0.6)) return ['L', 0]
+        return ['A', r > 8.4 ? 2 : dx + dy > 4 ? 1 : 0]
+      }
+      if ((x === 3 || x === 7) && y >= 9 && y < 15) return y < 11 ? ['T', 0] : ['M', 0]
+      if (x >= 3 && x <= 7 && y >= 15 && y < 22 && (y > 15 || (x > 3 && x < 7))) return ['T', 0]
+      if (y >= 22 && y <= 26 && x >= 2 && x <= 24 + (y - 22) * 1.5) return y === 26 ? ['M', 0] : ['T', 0]
+      return y >= 29 && y <= 30 && x % 8 < 5 ? ['M', 1] : null
+    }),
+  // Two sheets of paper with lines of text, and a magnifying glass on them.
+  papertrail: () =>
+    paint((x, y) => {
+      const lens = Math.hypot(x - 21.5, y - 20.5)
+      if (lens < 6.2) {
+        if (lens > 4.4) return ['A', 0]
+        return (y === 20 || y === 21) && Math.abs(x - 21.5) < 3 ? ['L', 0] : ['T', x + y < 39 ? 0 : 1]
+      }
+      if (Math.abs(x - y - 1) <= 1 && x >= 26) return ['A', 2]
+      // The front sheet has a cut corner on the top right.
+      if (x >= 4 && x <= 19 && y >= 6 && y <= 29 && x - y <= 9) {
+        const line = [10, 13, 16, 19, 22, 25].indexOf(y)
+        if (x - y === 9) return ['M', 0]
+        return line >= 0 && x >= 6 && x < 6 + [9, 11, 7, 11, 5, 9][line] ? ['L', 0] : ['T', 0]
+      }
+      return x >= 9 && x <= 24 && y >= 3 && y <= 26 ? ['T', 2] : null
+    }),
   // A globe with its grid, for research on the web. The light comes from the top left.
   web: () =>
     Array.from({ length: N }, (_, y) =>
