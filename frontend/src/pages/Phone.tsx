@@ -190,17 +190,35 @@ export function PhoneView({
                   </>
                 )}
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  {(['win', 'place'] as const).map((market) => (
-                    <button
-                      key={market}
-                      disabled={!open || (mine !== undefined && mine !== horse.id)}
-                      onClick={() => (player ? setSlip({ horse: horse.id, market }) : navigate('/signin', { state: { from: pathname } }))}
-                      className="h-16 border-2 border-text leading-none disabled:border-line disabled:text-muted"
-                    >
-                      <span className="block text-[12px] text-muted">{market === 'win' ? 'Win' : 'Place'}</span>
-                      <span className="mt-1 block font-pixel text-[30px] leading-none">{odds(price[market])}</span>
-                    </button>
-                  ))}
+                  {(['win', 'place'] as const).map((market) => {
+                    // The stake of the player on this horse in this market is on the button, and after the race the result.
+                    const own = bets.filter((bet) => bet.horse === horse.id && bet.market === market)
+                    const staked = own.reduce((sum, bet) => sum + bet.amount, 0)
+                    const paid = own.reduce((sum, bet) => sum + (bet.payout ?? 0), 0)
+                    const name = market === 'win' ? 'Win' : 'Place'
+                    // A short text for the narrow button of a phone, and a long text for a wide screen.
+                    const [short, long] = !staked
+                      ? [name, name]
+                      : own[0].payout == null
+                        ? [oats(staked), `${name} ${oats(staked)}`]
+                        : paid > 0
+                          ? [`+${oats(paid)}`, `Won ${oats(paid)}`]
+                          : [`-${oats(staked)}`, `Lost ${oats(staked)}`]
+                    return (
+                      <button
+                        key={market}
+                        disabled={!open || (mine !== undefined && mine !== horse.id)}
+                        onClick={() => (player ? setSlip({ horse: horse.id, market }) : navigate('/signin', { state: { from: pathname } }))}
+                        className={`h-16 border-2 leading-none ${staked ? 'border-accent' : 'border-text disabled:border-line disabled:text-muted'}`}
+                      >
+                        <span className={`block truncate text-[12px] ${staked ? 'text-accent' : 'text-muted'}`}>
+                          <span className="lg:hidden">{short}</span>
+                          <span className="hidden lg:inline">{long}</span>
+                        </span>
+                        <span className="mt-1 block font-pixel text-[30px] leading-none">{odds(price[market])}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </li>
@@ -208,34 +226,9 @@ export function PhoneView({
         })}
       </ol>
 
-      <section className="pt-8">
-        <h2 className="font-pixel text-[30px] leading-none">Your bets</h2>
-        {bets.length === 0 && (
-          <p className="mt-3 text-[15px] text-muted">
-            {player ? 'No bets yet. ' : 'Sign in to bet. You start with 1,000 Credits. '}
-            Pick one horse and tap its odds. You bet on one horse per race.
-          </p>
-        )}
-        <ul className="mt-3 max-w-md">
-          {bets.map((bet, i) => (
-            <li key={i} className="flex justify-between gap-4 border-b-2 border-line py-3 text-[15px]">
-              <span className="truncate">
-                {lanes.find((lane) => lane.horse.id === bet.horse)?.horse.name ?? bet.horse}, {bet.market === 'win' ? 'to win' : 'to place'}
-              </span>
-              {bet.payout == null ? (
-                <span className="shrink-0">{oats(bet.amount)} Credits</span>
-              ) : bet.payout > 0 ? (
-                <span className="shrink-0 text-accent">Won {oats(bet.payout)} Credits</span>
-              ) : (
-                <span className="shrink-0 text-muted">Lost {oats(bet.amount)} Credits</span>
-              )}
-            </li>
-          ))}
-        </ul>
-        <Link to="/arena" className="mt-8 inline-block text-[15px] underline underline-offset-4">
-          Enter your own model
-        </Link>
-      </section>
+      <Link to="/arena" className="mt-8 inline-block text-[15px] underline underline-offset-4">
+        Enter your own model
+      </Link>
 
       {player && slip && slipLane && open && (
         <BetSlip
