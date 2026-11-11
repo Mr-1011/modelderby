@@ -507,6 +507,18 @@ export default function Ops() {
             <p className="mt-1 font-pixel text-[30px] leading-none">{value}</p>
           </div>
         ))}
+        {/* The newest races that have events. A finished race is not in the overview, so this is the way to its replay. */}
+        <div>
+          <p className={LABEL}>Replay</p>
+          <p className="mt-1 flex gap-4 font-pixel text-[30px] leading-none">
+            {[...new Set(events.map((event) => event.race_id))].slice(0, 6).map((race) => (
+              <Link key={race} to={`/ops?race=${race}`} className="text-accent">
+                {race}
+              </Link>
+            ))}
+            {events.length === 0 && '-'}
+          </p>
+        </div>
       </header>
       {/* /ops?race=12 shows only race 12, on the full width. */}
       {picked ? <Detail key={picked} id={picked} events={events} now={now} onError={onError} /> : null}
