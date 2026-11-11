@@ -5,6 +5,7 @@ import {
   type Horse,
   type Player,
   type Race,
+  type RaceEvent,
   type Stakes,
   placeOdds,
   winOdds,
@@ -237,6 +238,44 @@ export function useIsAdmin() {
   return useQuery({
     queryKey: ['admin', id],
     queryFn: async () => !!id && (await get<boolean>(supabase.rpc('is_admin'))),
+  })
+}
+
+// What the runner did, newest first, for the ops view. Only an admin gets rows.
+export function useRaceEvents(enabled: boolean) {
+  const client = useQueryClient()
+  return useQuery({
+    queryKey: ['events'],
+    enabled,
+    // shortcut: a poll, not Realtime, because the row filter of this table is a function call for each row.
+    // Add the table to the Realtime publication if one second is too slow.
+    refetchInterval: 1000,
+    queryFn: async (): Promise<RaceEvent[]> => {
+      // Only the rows after the newest known row, so each poll is small.
+      const known = client.getQueryData<RaceEvent[]>(['events']) ?? []
+      const fresh = await get<RaceEvent[]>(
+        supabase.from('race_events').select('*').gt('id', known[0]?.id ?? 0).order('id', { ascending: false }).limit(1000),
+      )
+      return [...fresh, ...known].slice(0, 3000)
+    },
+  })
+}
+
+// The number of sandboxes that the runner forked since midnight, local time.
+export function useForksToday(enabled: boolean) {
+  return useQuery({
+    queryKey: ['forks-today'],
+    enabled,
+    refetchInterval: 5000,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('race_events')
+        .select('id', { count: 'exact', head: true })
+        .eq('kind', 'fork_created')
+        .gte('at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString())
+      if (error) throw new Error(error.message)
+      return count ?? 0
+    },
   })
 }
 
