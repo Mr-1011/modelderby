@@ -16,6 +16,23 @@ export const BLURBS: Record<string, string> = {
   rover: 'A rover in a warehouse. It must deliver one package before the battery is empty.',
 }
 
+// What a horse did or does, in a few words. A waiting horse has no state text.
+export const stateOf = (entry: Entry) =>
+  entry.state === 'escaped'
+    ? 'finished'
+    : entry.state === 'out'
+      ? 'out'
+      : entry.state === 'running'
+        ? entry.progress > 80
+          ? 'about to solve'
+          : 'running'
+        : entry.state === 'waiting'
+          ? ''
+          : 'not solved'
+
+// How far a horse is: the open locks in the Vault, and a percentage in the other challenges.
+export const progressOf = (task: string, entry: Entry) => (task === 'vault' ? `${entry.locks_open} of 5 locks` : `${Math.round(entry.progress)}%`)
+
 // The status line of a race: the countdown, the race clock or the winner.
 // A race that is not ready waits for its first player, so its countdown is not real.
 export const statusOf = (race: Race, now: number, winner?: string) =>

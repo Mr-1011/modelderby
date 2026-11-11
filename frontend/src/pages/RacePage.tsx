@@ -6,7 +6,7 @@ import { oats } from '../lib/format'
 import { placeBet, useNow, usePlayer, useRace, useSession } from '../lib/queries'
 import { PhoneView } from './Phone'
 
-// One race with live data: the phone view of the Design session, then the odds chart and the result.
+// One race with live data: the race view with the odds chart on top, then the result.
 // The page is open without an account. Only a bet needs one.
 export default function RacePage() {
   const id = Number(useParams().id)
@@ -29,6 +29,14 @@ export default function RacePage() {
       <PhoneView
         view={view}
         stakes={view}
+        chart={(active, onActive) => (
+          <OddsChart
+            view={view}
+            end={Date.parse(race.betting_closed_at ?? race.ended_at ?? '') || now}
+            active={active}
+            onActive={onActive}
+          />
+        )}
         player={player ?? null}
         bets={mine
           .map((bet) => ({ horse: bet.outcome, market: bet.market, amount: bet.amount, payout: bet.payout }))
@@ -43,15 +51,12 @@ export default function RacePage() {
           )
         }
       />
-      <section className="mx-auto max-w-6xl px-4 pb-10 *:max-w-md">
+      <section className="*:max-w-md">
         {race.status === 'settled' && mine.length > 0 && (
-          <p className="mb-8 bg-accent p-4 font-pixel text-[30px] leading-none text-on-accent">
+          <p className="mt-8 bg-accent p-4 font-pixel text-[30px] leading-none text-on-accent">
             {paid >= staked ? `You won ${oats(paid - staked)} Oats` : `You lost ${oats(staked - paid)} Oats`}
           </p>
         )}
-        <h2 className="font-pixel text-[30px] leading-none">Chance to win</h2>
-        <p className="mb-4 mt-1 text-[14px] text-muted">The share of the Win pool on each horse. A bet moves it.</p>
-        <OddsChart view={view} end={Date.parse(race.betting_closed_at ?? race.ended_at ?? '') || now} />
         {race.seed_revealed && <p className="mt-6 break-all text-[13px] text-muted">Seed of this race: {race.seed_revealed}</p>}
       </section>
       {alert && (

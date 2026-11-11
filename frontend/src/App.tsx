@@ -16,10 +16,10 @@ export default function App() {
   return (
     <Routes>
       <Route path="/board" element={<Board />} />
-      <Route path="/race/:id" element={<RacePage />} />
       <Route path="/signin" element={<SignIn />} />
       <Route element={<Shell />}>
         <Route path="/" element={<Home />} />
+        <Route path="/race/:id" element={<RacePage />} />
         <Route path="/arena" element={<Arena />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/admin" element={<Admin />} />

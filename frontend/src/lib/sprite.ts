@@ -179,3 +179,6 @@ const turf = (base: string, lit: string, shade: string) =>
       `<path fill='${shade}' d='M5 6h1v1H5zM12 5h1v1h-1zM1 12h1v1H1zM9 14h1v1H9z'/></svg>`,
   )}")`
 export const GRASS = [turf('#3b8a3e', '#4fa352', '#2e7133'), turf('#357f39', '#489a4c', '#2a6930')]
+
+// The sticker colors of the cube puzzle: white, red, green, yellow, orange, blue.
+export const STICKER: Record<string, string> = { W: '#f5f1e6', R: '#d92b2b', G: '#2e9e4f', Y: '#f2d024', O: '#ff7a1a', B: '#2b5fd9' }

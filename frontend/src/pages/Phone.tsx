@@ -1,13 +1,14 @@
-import { APP_NAME, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
-import { useEffect, useState } from 'react'
+import { type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@horserace/shared'
+import { type ReactNode, useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import Glyph from '../components/Glyph'
 import Horse from '../components/Horse'
-import SignInLink from '../components/SignInLink'
+import RoomView from '../components/RoomView'
 import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
 import { useModels } from '../lib/queries'
-import { type RaceView, ROOMS, statusOf } from '../lib/race'
+import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
@@ -71,13 +72,15 @@ function BetSlip({
   )
 }
 
-// The race page without its data source: the live page and the demo both render it.
+// The race page without its data source: the live page and the demo both render it. It goes below the header of the Shell.
 // The page is open without an account: player is null then, and a tap on the odds leads to the sign-in page.
 // stakes are the Oats on each horse in both markets. Without them (the demo), the bet slip estimates the payout from the odds.
+// chart draws the odds chart. It gets the horse that the page highlights, and a function to set it.
 export function PhoneView({
-  view, player, bets, onBet, stakes,
+  view, player, bets, onBet, stakes, chart,
 }: {
   view: RaceView
+  chart?: (active: string | null, onActive: (horse: string | null) => void) => ReactNode
   stakes?: { win: Stakes; place: Stakes }
   player: Player | null
   bets: MyBet[]
@@ -88,6 +91,8 @@ export function PhoneView({
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const [slip, setSlip] = useState<{ horse: string; market: Market } | null>(null)
+  // The horse under the pointer, in the chart or in the boxes.
+  const [active, setActive] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now)
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 250)
@@ -104,32 +109,26 @@ export function PhoneView({
   const px = window.innerWidth < 1024 ? 2 : 3
 
   return (
-    <main className="pb-10">
-      <header className="sticky top-0 z-[5] border-b-4 border-text bg-bg pb-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="flex items-center justify-between gap-4">
-            {/* The way back to the race list. */}
-            <Link to="/" className="font-pixel text-[30px] leading-none">
-              {APP_NAME}
-            </Link>
-            {player ? (
-              <p className="font-pixel text-[30px] leading-none text-accent">{oats(player.credits)} Oats</p>
-            ) : (
-              <SignInLink />
-            )}
-          </div>
-          <div className="mt-2 flex items-baseline justify-between gap-4 text-[14px]">
-            <p className="text-muted">
-              Race {race.id}, {ROOMS[race.task] ?? race.task}
-            </p>
-            <p>{race.status === 'running' && !open ? `Bets closed, ${status}` : status}</p>
-          </div>
+    <main>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 py-6">
+        <Glyph name={race.task} px={px} />
+        <div className="min-w-0 flex-1">
+          <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
+          <p className="mt-2 text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
         </div>
-      </header>
+        <div className="flex w-full items-baseline justify-between gap-x-6 gap-y-2 font-pixel text-[30px] leading-none lg:w-auto lg:flex-col lg:items-end">
+          <p className="text-accent">{status}</p>
+          <p className="text-muted">
+            {race.status === 'running' && !open ? 'Bets closed' : <>Pool <span className="text-text">{oats(view.pool)}</span></>}
+          </p>
+        </div>
+      </div>
+
+      {chart?.(active, setActive)}
 
       {/* The track shows only when the race has started. Before the start, the horses wait in their boxes. */}
       {race.status !== 'open' && (
-        <div className="border-b-4 border-text">
+        <div className="-mx-4 mt-6 border-y-4 border-text lg:mx-0 lg:border-x-4">
           <div style={{ height: px * 10 }}>
             <Rail px={px} />
           </div>
@@ -144,11 +143,16 @@ export function PhoneView({
         </div>
       )}
 
-      <ol className="mx-auto grid max-w-6xl grid-cols-2 gap-3 px-4 pt-4 sm:grid-cols-3 lg:grid-cols-4">
+      <ol className="grid grid-cols-2 gap-3 pt-6 sm:grid-cols-3 lg:grid-cols-4">
         {lanes.map(({ horse, entry, ...price }, i) => {
           const model = models?.find((option) => option.id === horse.model)
           return (
-            <li key={horse.id} className={`min-w-0 border-2 bg-panel ${mine === horse.id ? 'border-accent' : 'border-line'}`}>
+            <li
+              key={horse.id}
+              onPointerEnter={() => setActive(horse.id)}
+              onPointerLeave={() => setActive(null)}
+              className={`min-w-0 border-2 bg-panel ${active === horse.id ? 'border-text' : mine === horse.id ? 'border-accent' : 'border-line'}`}
+            >
               <div className="relative flex justify-center pb-1 pt-5" style={grass(px)}>
                 <span
                   className="absolute left-0 top-0 grid size-7 place-items-center font-pixel text-[30px] leading-none"
@@ -165,13 +169,20 @@ export function PhoneView({
                   {horse.model}
                   {horse.reasoning_effort && `, ${horse.reasoning_effort} effort`}
                 </p>
-                <p className="truncate text-[12px] text-muted">
-                  {entry.steps > 0
-                    ? `${entry.locks_open} of 5 locks, ${usd(entry.cost_usd)}`
-                    : model
-                      ? `${usd(model.prompt)} / ${usd(model.completion)} per M`
-                      : ' '}
-                </p>
+                {/* Before the race: the token price of the model. Then: how far the horse is, and what it has cost. */}
+                {entry.state === 'waiting' ? (
+                  <p className="truncate text-[12px] text-muted">{model ? `${usd(model.prompt)} / ${usd(model.completion)} per M` : '\u00a0'}</p>
+                ) : (
+                  <>
+                    <p className={`truncate text-[12px] ${entry.state === 'escaped' ? 'text-accent' : 'text-muted'}`}>
+                      {progressOf(race.task, entry)}, {stateOf(entry)}
+                    </p>
+                    <div className="mt-3 flex items-end justify-between gap-2">
+                      <p className="font-pixel text-[30px] leading-none">{usd(entry.cost_usd)}</p>
+                      {entry.view && <RoomView view={entry.view} cell={px + 2} />}
+                    </div>
+                  </>
+                )}
                 <div className="mt-3 grid grid-cols-2 gap-2">
                   {(['win', 'place'] as const).map((market) => (
                     <button
@@ -191,7 +202,7 @@ export function PhoneView({
         })}
       </ol>
 
-      <section className="mx-auto max-w-6xl px-4 pt-8">
+      <section className="pt-8">
         <h2 className="font-pixel text-[30px] leading-none">Your bets</h2>
         {bets.length === 0 && (
           <p className="mt-3 text-[15px] text-muted">
@@ -250,15 +261,17 @@ function DemoPhone() {
   const [player, setPlayer] = useState<Player>({ nickname: 'You', credits: 1000 })
   const [bets, setBets] = useState<MyBet[]>([])
   return (
-    <PhoneView
-      view={view}
-      player={player}
-      bets={bets}
-      onBet={(horse, market, amount) => {
-        setPlayer((current) => ({ ...current, credits: current.credits - amount }))
-        setBets((current) => [{ horse, market, amount }, ...current])
-      }}
-    />
+    <div className="mx-auto max-w-6xl px-4 pb-10">
+      <PhoneView
+        view={view}
+        player={player}
+        bets={bets}
+        onBet={(horse, market, amount) => {
+          setPlayer((current) => ({ ...current, credits: current.credits - amount }))
+          setBets((current) => [{ horse, market, amount }, ...current])
+        }}
+      />
+    </div>
   )
 }
 

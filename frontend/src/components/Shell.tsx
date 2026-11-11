@@ -7,7 +7,7 @@ import SignInLink from './SignInLink'
 const TAB =
   'grid h-14 place-items-center font-pixel text-[22.5px] leading-none text-muted aria-[current=page]:bg-accent aria-[current=page]:text-on-accent lg:px-5 lg:text-[30px]'
 
-// The header with the account and the main pages. The race page and the board have their own headers.
+// The header with the account and the main pages, the same on each page. Only the board has its own header.
 export default function Shell() {
   const session = useSession()
   const { data: player } = usePlayer()
