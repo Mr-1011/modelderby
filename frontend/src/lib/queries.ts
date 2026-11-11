@@ -170,8 +170,9 @@ export function useRace(id: number | undefined) {
         client.invalidateQueries({ queryKey: ['race', id] })
       }, 300)
     }
+    // The name is new for each caller. Two callers with the same name get the same channel, and the second `on` then throws.
     const channel = supabase
-      .channel(`race-${id}`)
+      .channel(`race-${id}-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'races', filter: `id=eq.${id}` }, () => {
         reload()
         // The settle pays the players, so the balance is new too.
