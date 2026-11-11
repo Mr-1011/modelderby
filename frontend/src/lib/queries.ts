@@ -90,27 +90,20 @@ export function useRaces() {
     queryKey: ['races'],
     refetchInterval: 5000,
     queryFn: async (): Promise<RaceSummary[]> => {
-      const races = await get<Race[]>(supabase.from('races').select('*').order('id', { ascending: false }).limit(30))
-      const ids = races.map((race) => race.id)
-      const [entries, totals] = await Promise.all([
-        get<Pick<Entry, 'race_id' | 'horse_id'>[]>(
-          supabase.from('entries').select('race_id, horse_id').in('race_id', ids),
-        ),
-        get<BetTotal[]>(supabase.from('bet_totals').select('*').in('race_id', ids)),
-      ])
-      const horses = await get<Horse[]>(
-        supabase.from('horses').select('*').in('id', [...new Set(entries.map((entry) => entry.horse_id))]),
+      const races = await get<(Race & { entries: { horse: Horse }[] })[]>(
+        supabase.from('races').select('*, entries(horse:horses(*))').order('id', { ascending: false }).limit(30),
       )
-      return races.map((race) => {
-        const lineup = horses.filter((horse) =>
-          entries.some((entry) => entry.race_id === race.id && entry.horse_id === horse.id),
-        )
+      const totals = await get<BetTotal[]>(
+        supabase.from('bet_totals').select('*').in('race_id', races.map((race) => race.id)),
+      )
+      return races.map(({ entries, ...race }) => {
+        const horses = entries.map((entry) => entry.horse).sort((a, b) => a.kind.localeCompare(b.kind) || a.id.localeCompare(b.id))
         const mine = totals.filter((total) => total.race_id === race.id)
         const win = stakesOf(mine, 'win')
-        const favorite = lineup.slice().sort((a, b) => (win[b.id] ?? 0) - (win[a.id] ?? 0))[0]
+        const favorite = horses.slice().sort((a, b) => (win[b.id] ?? 0) - (win[a.id] ?? 0))[0]
         return {
           race,
-          horses: lineup,
+          horses,
           pool: poolOf(mine),
           favorite,
           favoriteOdds: favorite && win[favorite.id] ? winOdds(win, favorite.id) : 0,
