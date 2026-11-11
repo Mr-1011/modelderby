@@ -58,7 +58,7 @@ A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. Th
 `supabase config push` writes `backend/supabase/config.toml` to the hosted project. When an agent runs it, the CLI answers its own prompt with yes, so there is no dry run by default. To see the diff only:
 
 ```
-echo n | supabase config push --agent no
+yes n | supabase config push --agent no   # one "n" for each service that has a diff
 ```
 
 The runner image is the `Dockerfile` at the repo root, and the build context is the repo root. The Railway project does not exist yet.
@@ -94,6 +94,18 @@ Rules that hold across files:
 - The database column is `players.credits`, but the UI always says "Oats".
 - All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
 - Odds are pari-mutuel and are computed on read from `bets`. The runner also writes `odds_snapshots` every 5 s, but only for the odds chart.
+
+## Google login
+
+Login must not redirect through Supabase. Do not use `supabase.auth.signInWithOAuth`: Google then shows `kqpkcmcehcdipshlirzi.supabase.co` on its sign-in screen. That was the problem in hypemarket.
+
+- Use Google Identity Services in the browser. Load `https://accounts.google.com/gsi/client`, call `google.accounts.id.initialize({ client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID, nonce: hashedNonce, callback })` and show the button with `google.accounts.id.renderButton`. Google draws this button. A custom button cannot start the flow.
+- In the callback, call `supabase.auth.signInWithIdToken({ provider: 'google', token: response.credential, nonce })`.
+- The nonce is a random string. Google gets its SHA-256 hash as a hex string. Supabase gets the raw string.
+- The OAuth client is "Agent Derby web" in the Google Cloud project `horserace-514403` (organization fluidlabs.co). No client secret is stored, because this flow does not need one.
+- Google accepts the button only on the origins in the client: `http://localhost:5173`, `http://localhost` and `https://horserace-snowy.vercel.app`. Add each new origin (the final domain) in the Google Cloud console under Google Auth Platform, Clients.
+- The Google app is in "Testing", so only test users can log in. Add test users under Google Auth Platform, Audience. "Publish app" needs a home page and a privacy policy link on the final domain.
+- `[auth.external.google]` in `backend/supabase/config.toml` holds the client ID. The hosted project gets it with `supabase config push`.
 
 ## UI rules
 
