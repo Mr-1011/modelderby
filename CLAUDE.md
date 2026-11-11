@@ -122,6 +122,10 @@ Rules that hold across files:
 - Odds are pari-mutuel and are computed on read from `bets` with the maths in `shared/src/odds.ts`: all stakes of a market are one pool, so the odds of a horse fall when more Oats are on it. `open_race` and `enter_model` add a house seed of `horses.seed_weight` x 100 Oats per market (bets with `player_id` null), so each horse has odds before the first bet and a strong model starts as the favorite. The view `bet_totals` has the stakes per horse. The odds chart is computed from `bets` too (`winChanceHistory`), so nothing writes `odds_snapshots`.
 - A payout is floored per bet. A tie on the border of a paying position refunds that market.
 
+## Guest accounts and QR codes
+
+A player joins without Google at `/join` (`pages/Join.tsx`): a random rider name that the player can change, then `supabase.auth.signInAnonymously` with that name in the user metadata. `/join?race=<id>` sends the new player to that race, for a judge. The trigger `handle_new_user` gives a guest a `players` row with the full rider name and 1,000 Oats. The session of a guest lives only in the browser. The ops view shows both QR codes (`qrcode-generator`), and they point to `SITE_URL` in `shared/src/index.ts`. `[auth]` in `backend/supabase/config.toml` enables anonymous sign-ins and sets 1,000 of them per hour and IP address, because one venue shares one address. The hosted project gets it with `supabase config push`.
+
 ## Google login
 
 Login must not redirect through Supabase. Do not use `supabase.auth.signInWithOAuth`: Google then shows `kqpkcmcehcdipshlirzi.supabase.co` on its sign-in screen. That was the problem in hypemarket.
