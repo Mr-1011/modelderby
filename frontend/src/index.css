@@ -2,4 +2,61 @@
 
 /* All colors and fonts go here as theme tokens, so the design changes in one place. */
 @theme {
+  --color-bg: #000000;
+  --color-panel: #161513;
+  --color-line: #33302b;
+  --color-text: #f5f1e6;
+  --color-muted: #9b958a;
+  /* The brand color. The horses always stand on it. Text on it is black: white has a contrast of only 2.9:1. */
+  --color-accent: #ff6200;
+  --color-accent-deep: #d94e00;
+  --color-on-accent: #000000;
+  --font-pixel: 'Jersey 15', ui-monospace, monospace;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Horse.tsx sets --sprite-w. The sheet holds 3 frames, and the gallop is frames 1 and 2. */
+  --animate-gallop: gallop 280ms steps(2) infinite;
+  --animate-hop: hop 420ms steps(6);
+
+  @keyframes gallop {
+    from {
+      background-position-x: calc(var(--sprite-w) * -1);
+    }
+    to {
+      background-position-x: calc(var(--sprite-w) * -3);
+    }
+  }
+
+  @keyframes hop {
+    50% {
+      transform: translateY(-35%);
+    }
+  }
+}
+
+html {
+  color-scheme: dark;
+  background: var(--color-bg);
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+}
+
+a,
+button {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+/* The finish line of a lane. */
+.finish {
+  background: repeating-conic-gradient(var(--color-on-accent) 0 25%, var(--color-text) 0 50%) 0 0 / 16px 16px;
 }
