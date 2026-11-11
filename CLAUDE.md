@@ -4,104 +4,84 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Agent Derby (working name `horserace`) is a benchmark you can bet on. 6 to 8 LLM agents ("horses") race through the same escape room: 5 locks in a sandbox file system. Each horse runs in its own Archil sandbox, forked from one base. The audience bets Oats (play credits, no real money) on Win and Place while the race runs. Built at the Archil hackathon on 2026-11-10.
+Agent Derby (working name `horserace`) is a live model benchmark that the audience can bet on. 6 to 8 LLM agents ("horses") race through the same escape room: 5 locks in a sandbox file system. Each horse runs in its own Archil sandbox. The audience bets Oats (play credits, no real money) on Win and Place from their phones while the race runs. Built at the Archil hackathon on 2026-11-10.
 
-The brief holds the full spec, the locked decisions, the odds formulas and the time plan: https://app.notion.com/p/4147918a03d28195b7feef87143f0455
+Spec and locked decisions: https://app.notion.com/p/Agent-Derby-Brief-Archil-Hackathon-4147918a03d28195b7feef87143f0455
 
-Where this repo and the brief differ, the repo is right:
-
-- The frontend is Vite + React, not Next.js. Env variables start with `VITE_`, not `NEXT_PUBLIC_`.
-- The folders are `frontend/`, `backend/` and `shared/`. The brief calls them `apps/web`, `apps/runner` and `packages/shared`.
-- The package manager is pnpm, not npm.
-- `endpoint_url` of a submitted horse is in `horse_secrets`, not in `horses`, and `api_key` is optional. No client can read either.
-
-## Current state (2026-11-10)
-
-This is a skeleton. It has three placeholder pages, a backend with only `GET /health`, and the tables with row level security. Not built yet: the race runner loop, the functions `place_bet` and `settle_race`, login, the odds and finish order maths, the challenge pool. Update this section when that changes.
+The spec is ahead of the code. Most of the architecture below is not built yet, so check the code before you rely on a part. Section 2 of the spec lists the locked decisions (race rules, markets, the 3-minute limit, the UI rules). Do not change them without asking. The spec still describes a Next.js app in `apps/` with npm workspaces. The layout and commands in this file are the current ones.
 
 ## Repository layout
 
-One git repo and one pnpm workspace (`pnpm-workspace.yaml`).
+One git repo and one pnpm workspace with three packages:
 
-- `frontend/`: Vite, React, TypeScript, Tailwind v4, react-router. Hosted on Vercel.
-- `backend/`: the race runner, one long-lived Node process. Hosted on Railway.
-- `backend/supabase/`: migrations and config. Run `supabase` commands from `backend/`.
-- `shared/`: the package `@horserace/shared`. It holds the row types and `APP_NAME`, and it is the place for the maths that both sides need (odds, payouts, finish order). Both sides import its TypeScript source. It has no build step.
-- `pool/`: the private challenge pool (seeded `setup.py`, `check.sh`, `solve.py` per room). Git ignores it. Its content must never reach `frontend/`, a commit, a log line or an API response.
+- `frontend/`: Vite, React, TypeScript, Tailwind v4, React Router. Hosted on Vercel with root directory `frontend`.
+- `backend/`: the race runner, a long-lived Node process. Hosted on Railway. `backend/supabase/` holds the Supabase config and the migrations.
+- `shared/`: the row types and the app name, used by both. The Win and Place odds and payout maths also go here.
+- `pool/` (git-ignored, never commit it): the private challenge pool with generators, checkers and answers.
 
-Several agents work in this repo at the same time. Stage only the files you changed, by name. Commit each finished unit of work as one small commit. Messages follow `type: sentence`, for example `feat: show live odds on the horse cards`.
+`README.md` is for public readers. Update it when setup, commands or behavior change.
+
+Several agents work in this repo at the same time. Stage only the files you changed, by name. Commit each finished unit of work as one small commit with a message like `feat: show live odds on the horse cards`.
 
 ## Commands
 
-Run from the repo root:
+Run `pnpm install` once at the root.
+
+Run from `frontend/`:
 
 ```
-pnpm install
-pnpm --filter horserace-frontend dev      # http://localhost:5173
-pnpm --filter horserace-frontend build    # type check, then production build
-pnpm --filter horserace-backend dev       # http://localhost:8080/health, restarts on a change, reads backend/.env
-pnpm --filter horserace-backend build     # type check only
-pnpm --filter horserace-backend start     # the command that Railway runs
+pnpm dev                 # dev server
+pnpm build               # type check, then production build
+pnpm exec tsc --noEmit   # type check only
 ```
 
 Run from `backend/`:
 
 ```
-export SUPABASE_DB_PASSWORD=$(grep '^SUPABASE_DB_PASSWORD=' .env | cut -d= -f2)
-supabase db push --dry-run    # shows the migrations that are not on the hosted database
-supabase db push              # applies them
+pnpm dev     # runner in watch mode, reads backend/.env
+pnpm start   # runner without watch mode, does NOT read .env (Railway sets the variables)
+pnpm build   # type check only, there is no compile step
 ```
 
-The hosted Supabase project is `horserace`, ref `kqpkcmcehcdipshlirzi`, region us-west-1. A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. Minutes after a project is created, `db push` can time out. Try again.
+The runner listens on `PORT` (default 8080). `GET /health` answers `{"ok":true}`.
 
-Development uses the hosted project. The local stack (`supabase start`) uses the default ports, and the Hypemarket stack on this machine uses the same ports.
+Run Supabase CLI commands from `backend/`. The hosted project is `horserace` (ref `kqpkcmcehcdipshlirzi`, region us-west-1), and `backend/.env` holds `SUPABASE_DB_PASSWORD` for the CLI. To apply new migrations:
+
+```
+export SUPABASE_DB_PASSWORD=$(grep '^SUPABASE_DB_PASSWORD=' .env | cut -d= -f2)
+supabase db push --dry-run   # lists the migrations that are not on the hosted database
+supabase db push
+```
+
+A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. The first migration is on the hosted database, so add a new migration file for each change.
 
 There is no linter and no test suite.
 
-## Environment
-
-- `frontend/.env.local`: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_GOOGLE_CLIENT_ID`, `VITE_RUNNER_URL`. See `frontend/.env.example`.
-- `backend/.env`: `ARCHIL_API_KEY`, `ARCHIL_REGION`, `OPENROUTER_API_KEY`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `KEENABLE_API_KEY`. See `backend/.env.example`. `SUPABASE_DB_PASSWORD` is also there, only for the Supabase CLI.
-
-All models run through OpenRouter. Never use a direct Anthropic key.
-
 ## Architecture
 
-**Data flow**
-- The frontend has no API server for data. It reads Supabase directly with the publishable key and subscribes to Realtime on `races`, `entries`, `bets` and `odds_snapshots`.
-- Clients have `select` only. Row level security and revoked grants block all direct writes. A player changes state only through a `security definer` Postgres function (`place_bet`, not built yet).
-- The backend writes with the service role key. It also serves a small HTTP API for the frontend (`VITE_RUNNER_URL`): `GET /health` now, `POST /horses` later.
-- `horse_secrets`, `challenge_secrets` and `race_secrets` have row level security on, no policy and no grant. Only the service role reads them.
-- Odds are pari-mutuel and computed on read from `bets`. Put that maths in `shared/`, so the frontend and the backend give the same numbers.
+The three parts talk through Supabase:
 
-**Race** (not built, see the brief, section 3)
-- The model runs outside the sandbox. The backend sends each bash command of the model to the fork of that horse.
-- After each command the backend runs its own copy of the checker. The copy inside the room is only for the agent.
-- The room is generated at race start from a fresh seed. Seeds, generators and answers stay on the backend and on the Archil disk until the race is settled.
+- The frontend reads Supabase directly and subscribes to Realtime on `races`, `entries`, `bets` and `odds_snapshots`. Its routes are in `src/App.tsx`: `/` is the phone view (join, horse cards, bet slip), `/board` is the big screen at 1920x1080, and `/submit` is the form to enter your own model.
+- The runner owns the race state machine. For each race it forks one Archil sandbox per horse from a prepared base and runs one agent loop per horse: OpenRouter chat completions with one `bash` tool, and each command runs in the fork of that horse. After every tool call the runner runs its own copy of the checker and writes the progress to `entries`. It writes logs, diffs and final room states to the Archil disk `derby`. It is the only writer of race data and uses the service role key.
+- Postgres keeps the Oats balances consistent. Clients have select rights only. A bet goes through the function `place_bet`, and the runner pays out through `settle_race`. These two functions are not in the migration yet.
 
-**Backend TypeScript**
-- Node runs the `.ts` files directly (type stripping), so Node 22.18 or newer is necessary.
-- A relative import needs the `.ts` extension. A type-only import needs `import type`. Enums and constructor parameter properties do not work.
-- `tsc` reports all three (`backend/tsconfig.json`). The same rules apply to `shared/`, because the backend imports its source.
+One path does not go through Supabase: `/submit` posts to the runner (`POST /horses` at `VITE_RUNNER_URL`), because the runner must test the endpoint and store the API key.
 
-**Frontend**
-- Routes are in `frontend/src/App.tsx`: `/` is the phone view, `/board` is the big screen (1920x1080), `/submit` is the form for a user's own model.
-- All colors and fonts are theme tokens in `frontend/src/index.css`. Do not hardcode them in components.
-- The public name is not decided. It is `APP_NAME` in `shared/src/index.ts`, which also sets the document title. Change it only there.
-- Design bar from the brief: clean, generous padding, plain text labels, flat colors, no pill badges, no colored shadows, no tilted images, nothing cropped. Exactly one chart: the Win odds over time.
-- `frontend/vercel.json` sends every path to `index.html`, so a reload on `/board` works.
+Rules that hold across files:
 
-## Changing the schema
+- Hidden challenges: a client may only ever get `challenges.category` and `challenges.public_blurb`. Generators, seeds and expected answers stay in `pool/`, on the Archil disk and in the secrets tables. They never go into `frontend/`, a tracked path, a log line, an API response or a horse sandbox. The seed becomes public only after settle, in `races.seed_revealed`.
+- `horse_secrets`, `challenge_secrets` and `race_secrets` have row level security with no policy and no grant, so only the service role reads them. Put a new secret value in a table like these, never in a client-readable table.
+- The spec puts `endpoint_url` in `horses`. Here it is in `horse_secrets`, and `api_key` is optional, so no client can read the endpoint of a submitted horse.
+- `shared/src/types.ts` is handwritten. Update it when the schema changes.
+- Node runs the backend `.ts` files directly, and `shared` is imported as source. So `backend/` and `shared/` can use only erasable TypeScript syntax (no enums, no parameter properties), and a relative import needs the `.ts` extension.
+- The public name is not decided. It is `APP_NAME` in `shared/src/index.ts`. Do not hardcode the name in another place.
+- The database column is `players.credits`, but the UI always says "Oats".
+- All horses run through OpenRouter (`OPENROUTER_API_KEY`). Never use a direct Anthropic key.
+- Odds are pari-mutuel and are computed on read from `bets`. The runner also writes `odds_snapshots` every 5 s, but only for the odds chart.
 
-- Add a new migration file. Do not edit a migration that is on the hosted database.
-- `shared/src/types.ts` is handwritten. Update it with the schema.
-- A new table needs row level security, a policy if clients read it, and explicit grants. Follow the pattern at the end of `backend/supabase/migrations/20261110190000_schema.sql`.
+## UI rules
 
-## Deploy
-
-- Vercel: the project root directory is `frontend`. Vercel installs from the workspace root.
-- Railway (not set up yet): repo root, build `pnpm install --frozen-lockfile && pnpm --filter horserace-backend build`, start `pnpm --filter horserace-backend start`. Do not put the runner in a Vercel function: a race is longer than 4 minutes and needs open connections.
-
-## Open decisions
-
-- Login: the brief has two ways in (QR code + nickname with an anonymous Supabase session, and Google). The user later said "probably only Google". Ask before building login.
+- All colors and fonts are theme tokens in the `@theme` block of `frontend/src/index.css`. Do not hardcode them in a component.
+- Horse cards are the main element. There is exactly one chart: a line chart of the Win odds over time. No other chart, no progress bar, no race track.
+- No pill badges, no coloured shadows, no tilted images, nothing cropped. Flat colours only. Padding is at least 24 px on board cards and 16 px on the phone.
+- Before and during a race, show a lock only as its category and its blurb.
