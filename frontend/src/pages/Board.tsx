@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Track, { at } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { clock, oats, odds, usd } from '../lib/format'
+import { useBoardRaceId, useRace } from '../lib/queries'
 import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
 import { colorOf, SPRITE_H, SPRITE_W } from '../lib/sprite'
 
@@ -144,7 +145,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
             <div className="absolute right-[364px] top-1/2 w-[470px] -translate-y-1/2 border-4 border-text bg-bg p-8">
               <p className="font-pixel text-[76px] leading-none text-accent motion-safe:animate-blink">Bet now</p>
               <p className="mt-4 text-[26px] font-medium">{window.location.host}</p>
-              <p className="mt-2 text-[20px] text-muted">Pick a name and get 1,000 Oats.</p>
+              <p className="mt-2 text-[20px] text-muted">Sign in with Google and get 1,000 Oats.</p>
             </div>
           )}
         </div>
@@ -172,12 +173,17 @@ function DemoBoard() {
   return <BoardView {...useDemoRace()} />
 }
 
-export default function Board() {
-  // The fake race is only for design work. The live race data is not connected yet.
-  if (new URLSearchParams(window.location.search).has('demo')) return <DemoBoard />
+function LiveBoard() {
+  const { data: view } = useRace(useBoardRaceId())
+  if (view) return <BoardView race={view.race} lanes={view.lanes} challenges={view.challenges} pool={view.pool} />
   return (
     <main className="fixed inset-0 grid place-items-center bg-bg">
       <p className="font-pixel text-[48px] text-muted">No race yet</p>
     </main>
   )
+}
+
+export default function Board() {
+  // The fake race is only for design work.
+  return new URLSearchParams(window.location.search).has('demo') ? <DemoBoard /> : <LiveBoard />
 }
