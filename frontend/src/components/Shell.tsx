@@ -1,6 +1,6 @@
 import { APP_NAME } from '@modelderby/shared'
 import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { oats } from '../lib/format'
 import { signOut, usePlayer, useSession } from '../lib/queries'
 import { riderOf } from '../lib/rider'
@@ -14,12 +14,20 @@ const TAB =
 // The header with the account and the main pages, the same on each page. Only the board has its own header.
 const ITEM = 'block h-12 w-full px-4 text-left font-pixel text-[30px] leading-[48px] hover:bg-accent hover:text-on-accent'
 
+const LINKS = [
+  ['/privacy', 'Privacy'],
+  ['/terms', 'Terms'],
+  ['/support', 'Support'],
+]
+
 export default function Shell() {
   const session = useSession()
   const { data: player } = usePlayer()
   const [menu, setMenu] = useState(false)
+  const { pathname } = useLocation()
   return (
-    <>
+    // The bottom padding keeps the end of the page above the nav bar of a phone (56 px and its 4 px border).
+    <div className="flex min-h-dvh flex-col pb-[calc(60px+env(safe-area-inset-bottom))] lg:pb-0">
       <header className="sticky top-0 z-10 border-b-4 border-text bg-bg pt-[env(safe-area-inset-top)]">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
           <Link to="/" className="whitespace-nowrap font-pixel text-[30px] leading-none hover:text-accent">
@@ -81,18 +89,21 @@ export default function Shell() {
           </div>
         </div>
       </header>
-      <div className="mx-auto max-w-6xl px-4 pb-24 lg:pb-10">
+      <div className="mx-auto w-full max-w-6xl grow px-4 pb-10">
         <Outlet />
-        {/* Google needs a link to the privacy policy on the home page. */}
-        <footer className="mt-10 flex gap-6 border-t-2 border-line pt-4 text-[13px] text-muted">
-          <Link to="/privacy" className="hover:text-accent">
-            Privacy
-          </Link>
-          <Link to="/terms" className="hover:text-accent">
-            Terms
-          </Link>
-        </footer>
       </div>
-    </>
+      {/* Only the profile has the footer. It stays at the bottom of the screen, above the nav bar of a phone. */}
+      {pathname === '/profile' && (
+        <footer className="border-t-2 border-line">
+          <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
+            {LINKS.map(([to, label]) => (
+              <Link key={to} to={to} className="font-pixel text-[22.5px] leading-none text-muted hover:text-accent">
+                {label}
+              </Link>
+            ))}
+          </div>
+        </footer>
+      )}
+    </div>
   )
 }

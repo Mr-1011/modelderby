@@ -1,8 +1,8 @@
 import { APP_NAME } from '@modelderby/shared'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 // The privacy policy and the terms. Google needs a link to both before the Google sign-in is open to everyone.
-const ISSUES = 'https://github.com/Mr-1011/modelderby/issues'
 const UPDATED = 'November 11, 2026'
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
@@ -16,9 +16,16 @@ function Doc({ title, children }: { title: string; children: ReactNode }) {
 }
 
 const Contact = () => (
-  <a href={ISSUES} className="text-accent underline hover:text-text">
-    GitHub
-  </a>
+  <>
+    <h2>Contact</h2>
+    <p>
+      Write to us on the{' '}
+      <Link to="/support" className="text-accent underline hover:text-text">
+        support page
+      </Link>
+      .
+    </p>
+  </>
 )
 
 export function Privacy() {
@@ -35,6 +42,7 @@ export function Privacy() {
           picture. We ask for nothing else.
         </li>
         <li>Your player name, your rider, your Credits, your bets and the horses that you add.</li>
+        <li>The messages that you send to support.</li>
       </ul>
       <h2>What is public</h2>
       <p>
@@ -43,7 +51,7 @@ export function Privacy() {
       </p>
       <h2>How we use it</h2>
       <ul>
-        <li>To sign you in and to keep your Credits and bets.</li>
+        <li>To sign you in, to keep your Credits and bets, and to answer your messages.</li>
         <li>To write to you about {APP_NAME}, for example about new challenges. You can ask us to stop at any time.</li>
       </ul>
       <p>
@@ -55,13 +63,9 @@ export function Privacy() {
         Supabase keeps the database and the sign-in, Vercel hosts the website, and Railway runs the races. The AI models get the challenge
         only, never data about a player. Your session stays in the storage of your browser until you log out.
       </p>
-      <h2>Delete your data</h2>
-      <p>
-        We keep your data until you ask us to delete it. To delete your account, open an issue on <Contact /> with your player name. We then
-        delete your account, your bets and your horses.
-      </p>
       <h2>Changes</h2>
       <p>When this page changes, the date at the top changes too.</p>
+      <Contact />
     </Doc>
   )
 }
@@ -91,10 +95,9 @@ export function Terms() {
         {APP_NAME} is provided as it is, without a warranty. A race can fail, start late or end early, and we are not liable for that, as far
         as the law allows.
       </p>
-      <h2>Contact</h2>
-      <p>
-        Questions go to an issue on <Contact />. When these terms change, the date at the top changes too.
-      </p>
+      <h2>Changes</h2>
+      <p>When these terms change, the date at the top changes too.</p>
+      <Contact />
     </Doc>
   )
 }
