@@ -1,10 +1,10 @@
 import { APP_NAME } from '@horserace/shared'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Track, { at } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
-import { clock, oats, odds } from '../lib/format'
+import { clock, oats, odds, usd } from '../lib/format'
 import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
-import { SPRITE_H, SPRITE_W } from '../lib/sprite'
+import { colorOf, SPRITE_H, SPRITE_W } from '../lib/sprite'
 
 // The board is drawn at 1920x1080 and scaled to the screen, so every size here is a real pixel on the big screen.
 const W = 1920
@@ -32,8 +32,24 @@ function useNow() {
   return now
 }
 
+// One line of race commentary: the latest lock that a horse opened.
+function useCommentary(lanes: RaceView['lanes']) {
+  const [line, setLine] = useState('')
+  const seen = useRef<Record<string, number>>({})
+  useEffect(() => {
+    for (const { horse, entry } of lanes) {
+      const n = entry.locks_open
+      if (n > (seen.current[horse.id] ?? 0))
+        setLine(n === 5 ? `${horse.name} escapes the room` : `${horse.name} has ${n} ${n === 1 ? 'lock' : 'locks'} open`)
+      seen.current[horse.id] = n
+    }
+  }, [lanes])
+  return line
+}
+
 function BoardView({ race, lanes, challenges, pool }: RaceView) {
   const scale = useFit()
+  const event = useCommentary(lanes)
   const now = useNow()
 
   const laneH = Math.floor((LANES_H - (lanes.length - 1) * 4) / lanes.length)
@@ -72,8 +88,9 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
         </header>
 
         <div className={`${COLUMNS} mt-4 h-9 items-end font-pixel text-[28px] leading-none text-muted`}>
-          <span />
-          <span />
+          <p className="col-span-2 truncate text-accent">
+            {race.status === 'open' ? 'Place your bets' : race.status === 'running' ? event || 'They are off' : event}
+          </p>
           <div className="relative h-full">
             {[1, 2, 3, 4, 5].map((n) => (
               <span
@@ -93,10 +110,18 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
           <ol className="flex flex-col gap-1">
             {lanes.map((lane, i) => (
               <li key={lane.horse.id} className={`${COLUMNS} items-center`} style={{ height: laneH }}>
-                <span className="font-pixel text-[60px] leading-none text-accent">{i + 1}</span>
+                <span
+                  className="grid size-14 place-items-center font-pixel text-[44px] leading-none"
+                  style={{ background: colorOf(lane.horse.id).color, color: colorOf(lane.horse.id).ink }}
+                >
+                  {i + 1}
+                </span>
                 <div className="min-w-0">
                   <p className="truncate font-pixel text-[42px] leading-none">{lane.horse.name}</p>
-                  <p className="mt-1.5 truncate text-[17px] text-muted">{lane.horse.model}</p>
+                  <p className="mt-1.5 flex justify-between gap-4 text-[17px] text-muted">
+                    <span className="truncate">{lane.horse.model}</span>
+                    {lane.entry.cost_usd > 0 && <span>{usd(lane.entry.cost_usd)}</span>}
+                  </p>
                 </div>
                 <Track lane={lane} px={px} settled={race.status === 'settled'} notes />
                 <span className="text-right font-pixel text-[50px] leading-none">{odds(lane.win)}</span>

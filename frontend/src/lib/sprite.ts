@@ -89,16 +89,17 @@ const BREEDS: Breed[] = [
 ]
 
 // Silks: [main, second, cap]. No orange, because the horses stand on orange.
+// The main color is also the color of the horse in number chips and charts, so each one is distinct and reads on black.
 const SILKS: [string, string, string][] = [
-  ['#1552d8', '#ffd21f', '#ffd21f'],
-  ['#f5f1e6', '#d8112b', '#d8112b'],
-  ['#0a9b4b', '#ffd21f', '#0a9b4b'],
-  ['#7a2bd6', '#f5f1e6', '#f5f1e6'],
+  ['#2f6bff', '#ffd21f', '#ffd21f'],
+  ['#f5f1e6', '#e8243c', '#e8243c'],
+  ['#12a150', '#ffd21f', '#12a150'],
+  ['#9a4dff', '#f5f1e6', '#f5f1e6'],
   ['#ffd21f', '#16161a', '#16161a'],
-  ['#d8112b', '#f5f1e6', '#1552d8'],
-  ['#12b5c2', '#16161a', '#12b5c2'],
-  ['#ff5fae', '#1552d8', '#ff5fae'],
-  ['#16161a', '#ffd21f', '#ffd21f'],
+  ['#e8243c', '#f5f1e6', '#2f6bff'],
+  ['#12c4d1', '#16161a', '#12c4d1'],
+  ['#ff6fb5', '#2f6bff', '#ff6fb5'],
+  ['#a8e000', '#16161a', '#16161a'],
 ]
 
 // The second silks color goes where the pattern says: plain, hoops, sash, halves, checks.
@@ -159,4 +160,11 @@ export function drawFrame(look: Look, frame: number): (string | null)[][] {
         color ?? (grid[y - 1]?.[x] || grid[y + 1]?.[x] || line[x - 1] || line[x + 1] ? '#000000' : null),
     ),
   )
+}
+
+// The color that stands for a horse outside its sprite, and the text color that reads on it.
+export function colorOf(id: string) {
+  const color = SILKS[lookOf(id).silks][0]
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16))
+  return { color, ink: r * 299 + g * 587 + b * 114 > 140000 ? '#000000' : '#f5f1e6' }
 }

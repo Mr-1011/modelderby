@@ -83,7 +83,10 @@ function step(sim: Sim, now: number): Sim {
   const elapsed = now - Date.parse(race.started_at!)
   entries = entries.map((entry, i) => {
     if (entry.state !== 'running') return entry
-    const moved = { ...entry, steps: entry.steps + 1, last_step: COMMANDS[Math.floor(Math.random() * COMMANDS.length)] }
+    const moved = {
+      ...entry, steps: entry.steps + 1, cost_usd: entry.cost_usd + 0.004 * LINEUP[i][4],
+      last_step: COMMANDS[Math.floor(Math.random() * COMMANDS.length)],
+    }
     if (now < next[i]) return Math.random() < 0.3 ? moved : entry
     const locks_open = entry.locks_open + 1
     next[i] = now + gap(i, locks_open)

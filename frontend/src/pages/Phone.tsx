@@ -4,8 +4,9 @@ import { Link } from 'react-router-dom'
 import Horse from '../components/Horse'
 import Track from '../components/Track'
 import { useDemoRace } from '../lib/demo'
-import { clock, oats, odds } from '../lib/format'
+import { clock, oats, odds, usd } from '../lib/format'
 import { RACE_MS, type RaceView, ROOMS } from '../lib/race'
+import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
 export type Player = { nickname: string; credits: number }
@@ -137,10 +138,20 @@ export function PhoneView({
             </div>
             <div className="mt-3 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate font-pixel text-[28px] leading-none">
-                  <span className="text-accent">{i + 1}</span> {lane.horse.name}
+                <p className="flex items-center gap-2 font-pixel text-[28px] leading-none">
+                  <span
+                    className="grid size-7 shrink-0 place-items-center text-[22px]"
+                    style={{ background: colorOf(lane.horse.id).color, color: colorOf(lane.horse.id).ink }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="truncate">{lane.horse.name}</span>
                 </p>
-                <p className="mt-1 truncate text-[13px] text-muted">{lane.horse.model}</p>
+                <p className="mt-1.5 truncate text-[13px] text-muted">
+                  {lane.horse.model}
+                  {lane.entry.steps > 0 && `, ${lane.entry.steps} steps`}
+                  {lane.entry.cost_usd > 0 && `, ${usd(lane.entry.cost_usd)}`}
+                </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 {(['win', 'place'] as const).map((market) => (
