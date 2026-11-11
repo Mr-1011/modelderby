@@ -39,7 +39,7 @@ export const statusOf = (race: Race, now: number, winner?: string) =>
   race.status === 'open'
     ? race.ready
       ? `Starts in ${clock(Date.parse(race.countdown_ends_at ?? race.opens_at) - now + 999)}`
-      : 'Starts after a bet'
+      : 'Starts with the first bet'
     : race.status === 'running'
       ? `${clock(now - Date.parse(race.started_at!))} / ${clock(RACE_MS)}`
       : winner
