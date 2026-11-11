@@ -55,6 +55,14 @@ supabase db push
 
 A fresh clone needs `supabase link --project-ref kqpkcmcehcdipshlirzi` first. The first migration is on the hosted database, so add a new migration file for each change.
 
+The frontend is live at https://horserace-snowy.vercel.app. The Vercel project is `horserace` in the team `fluid-labs`, with root directory `frontend`. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
+
+```
+pnpm dlx vercel deploy --prod --scope fluid-labs
+```
+
+`vercel link` appends `.env*` to `.gitignore` and writes a root `.env.local`. Undo both, because that line hides the `.env.example` files.
+
 There is no linter and no test suite.
 
 ## Architecture
