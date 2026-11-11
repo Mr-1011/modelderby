@@ -4,13 +4,15 @@ import { useNow, useRaces } from '../lib/queries'
 
 const TABS = ['Popular', 'Latest'] as const
 
-// The race list. Popular puts the races with the most Oats of players first, and Latest the newest.
+// The race list. Popular puts the races that a player can still bet on first, then the most Oats of players. Latest puts the newest first.
 export default function Home() {
   const [tab, setTab] = useState<(typeof TABS)[number]>('Popular')
   const { data, error } = useRaces()
   const now = useNow()
   // The list arrives newest first, and the sort keeps that order for equal pools.
-  const races = tab === 'Latest' ? data : data?.slice().sort((a, b) => b.pool - a.pool)
+  const over = (status: string) => Number(status === 'settled')
+  const races =
+    tab === 'Latest' ? data : data?.slice().sort((a, b) => over(a.race.status) - over(b.race.status) || b.pool - a.pool)
   return (
     <main>
       <div className="mt-6 flex gap-2">
