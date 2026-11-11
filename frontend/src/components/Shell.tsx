@@ -30,9 +30,6 @@ export default function Shell() {
             <NavLink to="/" className={TAB}>
               Races
             </NavLink>
-            <NavLink to="/arena" className={TAB}>
-              Arena
-            </NavLink>
             <NavLink to="/leaderboard" className={TAB}>
               Leaderboard
             </NavLink>

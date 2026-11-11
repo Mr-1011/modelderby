@@ -10,9 +10,6 @@ const RACE_MS = 180_000
 const BUILD_MS = 20_000
 const CHECK_MS = 3000
 const MAX_STEPS = 40
-// The open Arena races. Each room also has one open house race.
-const ARENA_RACES = 1
-const MINUTE = 60_000
 // With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
 const ELIMINATE = ['1', 'true'].includes(process.env.LIVE_ELIMINATION ?? '')
 
@@ -355,26 +352,18 @@ async function finish(race: number, lanes: Lane[]) {
 
 async function tick() {
   const open = (await must(db.from('races').select('*').eq('status', 'open'))) as Race[]
-  // The countdown of a race that waits for its first player can be in the past, so a new race counts from now.
-  let latest = Math.max(0, ...open.map((race) => Date.parse(race.countdown_ends_at!)))
-  const openRace = async (task: string, arena: boolean) => {
-    latest = Math.max(Date.now(), latest) + 6 * MINUTE
-    await must(db.rpc('open_race', { p_task: task, p_countdown_ends_at: new Date(latest).toISOString(), p_arena: arena }))
-  }
   // A room with the command `search` needs the key of the search service.
   const wanted = Object.keys(ROOMS).filter((room) => !ROOMS[room].search || process.env.KEENABLE_API_KEY)
-  // Each room has one open house race, so the race list shows each challenge. The Arena races are counted apart.
-  const house = (room: string) => open.some((race) => !race.arena && race.task === room)
-  const arenas = ARENA_RACES - open.filter((race) => race.arena).length
-  if (arenas > 0 || !wanted.every(house)) {
+  // Each room has one open race, so the race list shows each challenge.
+  const missing = wanted.filter((room) => !open.some((race) => !race.arena && race.task === room))
+  if (missing.length) {
     // A race opens only for a room that is on the disk.
     const { commonPrefixes } = await (await disk()).listObjects('rooms/')
-    const rooms = wanted.filter((room) => commonPrefixes?.includes(`rooms/${room}/`))
-    for (const room of rooms) if (!house(room)) await openRace(room, false)
-    // An Arena race takes the next room after the room of the newest race.
-    const [newest] = (await must(db.from('races').select('task').order('id', { ascending: false }).limit(1))) as Race[]
-    let task = newest?.task
-    for (let n = 0; n < arenas; n++) await openRace((task = rooms[(rooms.indexOf(task) + 1) % rooms.length]), true)
+    for (const room of missing) {
+      if (!commonPrefixes?.includes(`rooms/${room}/`)) continue
+      // The first player sets the countdown, so this first value has no effect.
+      await must(db.rpc('open_race', { p_task: room, p_countdown_ends_at: new Date().toISOString() }))
+    }
   }
   // Only a ready race starts: the database sets ready at the first bet, the first model entry or an admin start.
   // The room build takes about 15 s, so it starts before the countdown ends.

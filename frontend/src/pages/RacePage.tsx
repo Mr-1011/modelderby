@@ -5,8 +5,10 @@ import EntryDialog from '../components/EntryDialog'
 import OddsChart from '../components/OddsChart'
 import { oats } from '../lib/format'
 import { placeBet, useModels, useNow, usePlayer, useRace, useSession } from '../lib/queries'
-import { MAX_HORSES } from './Arena'
 import { PhoneView } from './Phone'
+
+// The same limit as enter_model in the database.
+const MAX_HORSES = 8
 
 // A free place in the lineup of an open race. A player adds one OpenRouter model as a horse, and each player can bet on it.
 function AddHorse({ race, signedIn }: { race: number; signedIn: boolean }) {

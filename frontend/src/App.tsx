@@ -1,7 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import Shell from './components/Shell'
 import Admin from './pages/Admin'
-import Arena from './pages/Arena'
 import Board from './pages/Board'
 import Home from './pages/Home'
 import Join from './pages/Join'
@@ -26,12 +25,12 @@ export default function App() {
       <Route element={<Shell />}>
         <Route path="/" element={<Home />} />
         <Route path="/race/:id" element={<RacePage />} />
-        <Route path="/arena" element={<Arena />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
-      <Route path="/submit" element={<Navigate to="/arena" replace />} />
+      {/* An old link goes to the race list. */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
