@@ -33,6 +33,7 @@ export type Race = {
   status: 'open' | 'running' | 'settled'
   opens_at: string
   countdown_ends_at: string | null
+  ready: boolean // a player is in the race or an admin started it; the runner starts only a ready race
   started_at: string | null
   betting_closed_at: string | null
   ended_at: string | null

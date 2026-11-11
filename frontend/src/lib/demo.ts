@@ -46,7 +46,7 @@ function open(id: number, now: number): Sim {
   return {
     race: {
       id, task: 'vault', status: 'open', opens_at: new Date(now).toISOString(),
-      countdown_ends_at: new Date(now + OPEN_MS).toISOString(), started_at: null, betting_closed_at: null,
+      countdown_ends_at: new Date(now + OPEN_MS).toISOString(), ready: true, started_at: null, betting_closed_at: null,
       ended_at: null, place_count: 3, winner_horse: null, place_horses: null, seed_revealed: null,
     },
     entries: HORSES.map((horse) => ({
