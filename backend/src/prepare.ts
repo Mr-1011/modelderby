@@ -52,6 +52,10 @@ export async function buildBase(name: string, room: string, seed: string) {
 // The runner's own copy of the checker. A room checker prints "PROGRESS <0 to 100>" and optionally "VIEW <one line>".
 // The vault checker prints one line per lock instead, and each open lock is 20 points. Returns fields of an entry.
 export async function runCheck(sandbox: archil.Sandbox, check: string) {
+  // shortcut: the checker runs in the sandbox of the horse, where the horse is root. So a horse can read the checker
+  // text in /proc/<pid>/environ for the time of one check, and it can replace bash or python3 to print any progress.
+  // Run the checker in a fresh fork of the base that gets only the files of /room before a race is for more than
+  // play money.
   const { stdout } = await sandbox.exec('bash -c "$CHECK"', { env: { CHECK: check, ROOM: '/room' }, timeoutSeconds: 30 })
   const progress = stdout.match(/^PROGRESS (\d+)/m)?.[1]
   if (progress) {
