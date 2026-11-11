@@ -23,7 +23,7 @@ export type Challenge = {
   id: string
   room: string
   lock: number
-  category: 'text' | 'image' | 'robotics'
+  category: 'text' | 'image' | 'puzzle' | 'robotics'
   public_blurb: string
 }
 
@@ -47,7 +47,10 @@ export type Entry = {
   race_id: number
   horse_id: string
   sandbox_id: string | null
-  state: 'waiting' | 'running' | 'escaped' | 'failed' | 'timeout'
+  // escaped = solved the challenge. out = stopped by live elimination, because it cost more than a finisher.
+  state: 'waiting' | 'running' | 'escaped' | 'failed' | 'timeout' | 'out'
+  progress: number // 0 to 100 from the progress function of the challenge, 100 = solved
+  view: string | null // one line that shows the challenge state of this horse (cube stickers, rover map)
   locks_open: number
   locks: string | null
   steps: number

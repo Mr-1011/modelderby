@@ -73,13 +73,14 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', a4)::text, true);
   perform public.place_bet(v_race, 'win', 'h2', 300);
 
-  -- h1 escapes first, h2 second, h3 has 4 locks. The other horses have fewer locks, each a different count.
+  -- h1 finishes at the lowest cost, h2 finishes at a higher cost, h3 has a progress of 80.
+  -- The other horses have less progress, each a different value.
   update public.entries e
-  set finish_pos = f.pos, solved_ms = f.solved, locks_open = f.locks, last_lock_ms = f.last_lock
+  set finish_pos = f.pos, state = f.state, cost_usd = f.cost, progress = f.progress
   from (values
-    ('h1', 1, 90000, 5, 90000), ('h2', 2, 120000, 5, 120000), ('h3', 3, null, 4, 150000),
-    ('h4', 4, null, 3, 100000), ('h5', 5, null, 2, 80000), ('h6', 6, null, 1, 30000)
-  ) as f (horse, pos, solved, locks, last_lock)
+    ('h1', 1, 'escaped', 0.02, 100), ('h2', 2, 'escaped', 0.05, 100), ('h3', 3, 'timeout', 0.04, 80),
+    ('h4', 4, 'timeout', 0.03, 60), ('h5', 5, 'timeout', 0.02, 40), ('h6', 6, 'timeout', 0.01, 20)
+  ) as f (horse, pos, state, cost, progress)
   where e.race_id = v_race and e.horse_id = f.horse;
   update public.entries set finish_pos = 7 where race_id = v_race and horse_id = v_horse;
   insert into public.race_secrets (race_id, seed) values (v_race, 'test-seed');
@@ -111,7 +112,7 @@ begin
   exception when raise_exception then null;
   end;
 
-  -- No horse opens a lock: positions 1 and 2 tie, and positions 3 and 4 tie, so both markets refund.
+  -- No horse makes progress or has a cost: positions 1 and 2 tie, and positions 3 and 4 tie, so both markets refund.
   -- One player can use both markets on the same horse.
   v_race := public.open_race('vault', now() + interval '10 minutes');
   perform set_config('request.jwt.claims', json_build_object('sub', a2)::text, true);

@@ -52,6 +52,7 @@ function open(id: number, now: number): Sim {
     entries: HORSES.map((horse) => ({
       race_id: id, horse_id: horse.id, sandbox_id: null, state: 'waiting', locks_open: 0, locks: '00000', steps: 0,
       last_step: null, cost_usd: 0, tokens: 0, solved_ms: null, last_lock_ms: null, finish_pos: null, diff: null,
+      progress: 0, view: null,
     })),
     stakes: HORSES.map(() => 250),
     next: [],
@@ -91,7 +92,7 @@ function step(sim: Sim, now: number): Sim {
     const locks_open = entry.locks_open + 1
     next[i] = now + gap(i, locks_open)
     return {
-      ...moved, locks_open, locks: '1'.repeat(locks_open).padEnd(5, '0'), last_lock_ms: elapsed,
+      ...moved, locks_open, progress: locks_open * 20, locks: '1'.repeat(locks_open).padEnd(5, '0'), last_lock_ms: elapsed,
       ...(locks_open === 5 ? { state: 'escaped' as const, solved_ms: elapsed } : {}),
     }
   })
