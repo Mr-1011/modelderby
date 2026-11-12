@@ -52,7 +52,7 @@ export const ROOMS: Record<string, Room> = {
     blurbs: [
       'A rover in a warehouse. It must deliver one package before the battery is empty.',
       'A rover in a warehouse. It must deliver 3 packages to their docks on a tight battery.',
-      'A rover in a warehouse. 5 packages, 2 at a time, and a battery with almost no spare.',
+      'A rover in a warehouse. 8 packages, 3 at a time. Turns and loads cost battery, and the wheels slip.',
     ],
   },
   bughunt: {
