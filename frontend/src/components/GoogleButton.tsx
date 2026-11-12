@@ -53,10 +53,18 @@ export default function GoogleButton() {
           size: 'large',
           text: 'continue_with',
           locale: 'en',
-          width: '280',
+          // The full width of the frame. Google accepts at most 400 px.
+          width: String(Math.min(ref.current.clientWidth, 400)),
         }),
     )
   }, [])
+  // The frame has our border and the fill of the button, so the button looks square like the other buttons.
+  // The hover state is the one of Google: the page gets no hover from the iframe.
+  // Google gives the iframe a margin of -2 px. flow-root keeps that margin inside, so it does not pull the button over the border.
   // Without the light color scheme, the iframe gets a white box on a dark page.
-  return <div ref={ref} className="h-10 [color-scheme:light]" />
+  return (
+    <div className="border-2 border-accent bg-google">
+      <div ref={ref} className="flow-root h-10 [color-scheme:light]" />
+    </div>
+  )
 }

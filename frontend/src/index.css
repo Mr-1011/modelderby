@@ -11,6 +11,8 @@
   --color-accent: #ff6200;
   --color-accent-deep: #d94e00;
   --color-on-accent: #000000;
+  /* The fill of the Google button (theme filled_black). Its frame has this fill, so the round corners do not show. */
+  --color-google: #202124;
   --font-pixel: 'Jersey 15', ui-monospace, monospace;
   /* Each digit has the same width, so a countdown or a cost that changes does not move the text next to it. */
   --font-pixel--font-feature-settings: 'tnum';
