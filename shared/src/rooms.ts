@@ -79,7 +79,7 @@ export const ROOMS: Record<string, Room> = {
     blurbs: [
       'It works. It is slow. Make it ten times faster.',
       'It works. It is slow. Make it 25 times faster.',
-      'It works. It is slow. Make it a hundred times faster.',
+      'It works. It is slow. Make it fifty times faster.',
     ],
   },
   coldcase: {
