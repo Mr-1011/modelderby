@@ -20,6 +20,33 @@ const BUTTON =
   'h-14 border-2 border-text font-pixel text-[30px] leading-none hover:border-accent hover:text-accent disabled:border-line disabled:text-muted aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent'
 const PRIMARY = 'h-14 w-full bg-accent font-pixel text-[30px] leading-none text-on-accent hover:bg-accent-deep disabled:bg-line disabled:text-muted'
 
+// The rule of the race as a tag. The pointer on it, or a tap on a phone, opens a box that explains the rule.
+// On a phone the box has the full width of the page head (its positioned parent), so it never leaves the screen.
+function RuleTag() {
+  const [open, setOpen] = useState(false)
+  return (
+    <li className="group lg:relative">
+      <button
+        aria-expanded={open}
+        aria-describedby="rule"
+        onClick={() => setOpen(!open)}
+        onBlur={() => setOpen(false)}
+        className="border-2 border-line bg-line px-2 text-text hover:border-accent aria-expanded:border-accent"
+      >
+        Cheapest wins
+      </button>
+      <p
+        id="rule"
+        role="tooltip"
+        className={`absolute inset-x-0 z-20 mt-2 border-2 border-accent bg-panel p-3 text-[13px] leading-5 text-text group-hover:block lg:inset-x-auto lg:left-0 lg:top-full lg:w-80 ${open ? 'block' : 'hidden'}`}
+      >
+        The cheapest model that solves the task in 3 minutes wins. Speed does not count, only the cost of the tokens. If
+        no model solves it, the most progress wins.
+      </p>
+    </li>
+  )
+}
+
 // pays gives what a stake pays. It is less than stake x odds, because the stake moves the odds of its own pool.
 function BetSlip({
   horse, market, price, pays, credits, onBet, onClose,
@@ -116,17 +143,18 @@ export function PhoneView({
   return (
     <main>
       {/* On a wide screen the status is on the line of the title. On a phone it has its own row. */}
-      <div className="grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 py-6 lg:grid-cols-[auto_1fr_auto] lg:items-baseline">
+      <div className="relative grid grid-cols-[auto_1fr] items-center gap-x-6 gap-y-4 py-6 lg:grid-cols-[auto_1fr_auto] lg:items-baseline">
         <div className="lg:self-center">
           <Glyph name={race.task} px={px} />
         </div>
         <div className="min-w-0">
           <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
           <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
-          {/* The kind of the challenge is the filled tag. The other tags are the tools of a horse. */}
+          {/* The rule of the race, then the tools of a horse outside the shell. */}
           <ul className="mt-3 flex flex-wrap gap-2 text-[12px] leading-5">
-            {TAGS[race.task]?.map((tag, i) => (
-              <li key={tag} className={`flex items-center gap-1.5 border-2 border-line px-2 ${i ? 'text-muted' : 'bg-line'}`}>
+            <RuleTag />
+            {TAGS[race.task]?.map((tag) => (
+              <li key={tag} className="flex items-center gap-1.5 border-2 border-line px-2 text-muted">
                 {TAG_ICONS[tag] && <img src={TAG_ICONS[tag]} alt="" className="size-3.5" />}
                 {tag}
               </li>

@@ -172,7 +172,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
             challenges.map((challenge) => (
               <div key={challenge.id} className="text-[15px]">
                 <p className="font-pixel text-[30px] leading-none">
-                  Lock {challenge.lock} <span className="text-muted">{challenge.category}</span>
+                  Lock {challenge.lock}
                 </p>
                 <p className="mt-2 leading-snug text-muted">{challenge.public_blurb}</p>
               </div>
@@ -180,7 +180,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
           ) : (
             <div className="col-span-5 text-[20px]">
               <p className="font-pixel text-[30px] leading-none">
-                {ROOMS[race.task] ?? race.task} <span className="text-muted">{CHALLENGES[race.task]?.category}</span>
+                {ROOMS[race.task] ?? race.task}
               </p>
               <p className="mt-2 leading-snug text-muted">{CHALLENGES[race.task]?.blurb}</p>
             </div>

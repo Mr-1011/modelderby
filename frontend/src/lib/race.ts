@@ -11,9 +11,9 @@ export const RACE_MS = 180_000
 // The title and the one public line of each challenge, from the one list in shared/src/rooms.ts.
 export const ROOMS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { title }]) => [room, title]))
 export const BLURBS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { blurb }]) => [room, blurb]))
-// The tags of each challenge: its kind first, then the tools that a horse has in the room.
+// The tags of each challenge: the tools that a horse has in the room besides the shell. The category is only for us.
 export const TAGS: Record<string, string[]> = Object.fromEntries(
-  Object.entries(ALL).map(([room, { category, search }]) => [room, [category, 'bash', ...(search ? ['Keenable web search'] : [])]]),
+  Object.entries(ALL).map(([room, { search }]) => [room, search ? ['Keenable web search'] : []]),
 )
 // The icon of an external tool, for its tag: the favicon of the service, in frontend/public.
 export const TAG_ICONS: Record<string, string> = { 'Keenable web search': '/keenable.png' }
