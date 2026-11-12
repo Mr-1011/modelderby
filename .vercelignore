@@ -1,0 +1,8 @@
+# The Vercel CLI uploads the working directory, and it does not read .gitignore. Keep private files out of the upload.
+.git/
+node_modules/
+pool/
+backups/
+.env
+.env.*
+!.env.example
