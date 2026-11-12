@@ -8,9 +8,8 @@ export type RaceView = { race: Race; lanes: Lane[]; challenges: Challenge[]; poo
 
 export const RACE_MS = 180_000
 
-// The title and the one public line of each challenge, from the one list in shared/src/rooms.ts.
+// The title of each challenge, from the one list in shared/src/rooms.ts. blurbOf in shared gives its public line.
 export const ROOMS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { title }]) => [room, title]))
-export const BLURBS: Record<string, string> = Object.fromEntries(Object.entries(ALL).map(([room, { blurb }]) => [room, blurb]))
 // The tags of each challenge: the tools that a horse has in the room besides the shell. The category is only for us.
 export const TAGS: Record<string, string[]> = Object.fromEntries(
   Object.entries(ALL).map(([room, { search }]) => [room, search ? ['Keenable web search'] : []]),

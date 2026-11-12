@@ -1,7 +1,8 @@
+import { blurbOf } from '@modelderby/shared'
 import { Link } from 'react-router-dom'
 import { odds, usd } from '../lib/format'
 import { useRace } from '../lib/queries'
-import { BLURBS, ROOMS, statusOf } from '../lib/race'
+import { ROOMS, statusOf } from '../lib/race'
 import Glyph from './Glyph'
 import Horse from './Horse'
 import Track, { grass, Rail } from './Track'
@@ -39,7 +40,7 @@ export default function FeaturedRace({ id, now }: { id: number; now: number }) {
         </div>
         <div className="min-w-0">
           <h2 className="truncate font-pixel text-[30px] leading-none lg:text-[60px]">{ROOMS[race.task] ?? race.task}</h2>
-          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{blurbOf(race.task, race.level)}</p>
         </div>
         <p className="col-span-2 font-pixel text-[30px] leading-none text-accent lg:col-span-1">
           {winner ? `${status}, ${usd(winner.entry.cost_usd)}` : status}

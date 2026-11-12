@@ -6,9 +6,9 @@ import { finishOrder, ROOMS } from '@modelderby/shared'
 import type { Entry, Horse, Race } from '@modelderby/shared'
 import { buildBase, disk, remove, removeLeftovers, runCheck } from './prepare.ts'
 
-const RACE_MS = 180_000
+export const RACE_MS = 180_000
 const BUILD_MS = 20_000
-const CHECK_MS = 3000
+export const CHECK_MS = 3000
 const MAX_STEPS = 40
 // With the flag on, a horse goes out when its cost is above the cost of a horse that finished.
 const ELIMINATE = ['1', 'true'].includes(process.env.LIVE_ELIMINATION ?? '')
@@ -27,11 +27,11 @@ const BASH_TOOL = {
   },
 }
 
-const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+export const db = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
   auth: { persistSession: false },
 })
 
-type Lane = Entry & { horse: Horse }
+export type Lane = Entry & { horse: Horse }
 
 // supabase-js returns an error instead of throwing it.
 async function must<T>(query: PromiseLike<{ data: T; error: { message: string } | null }>) {
@@ -104,7 +104,7 @@ async function allowedModels() {
 
 // Puts a checker result into the entry of a horse. A running horse at 100 has finished.
 // The finish is final: a later move in the room can lower the progress, but not for a finished horse.
-function record(lane: Lane, result: Awaited<ReturnType<typeof runCheck>>, ms: number) {
+export function record(lane: Lane, result: Awaited<ReturnType<typeof runCheck>>, ms: number) {
   if (lane.state === 'escaped') return
   if (result.progress > lane.progress) lane.last_lock_ms = ms
   Object.assign(lane, result)
@@ -115,7 +115,7 @@ function record(lane: Lane, result: Awaited<ReturnType<typeof runCheck>>, ms: nu
 }
 
 // One horse: the model sends bash commands, the runner runs them in the fork and calls update after each one.
-async function ride(
+export async function ride(
   lane: Lane,
   fork: Sandbox,
   signal: AbortSignal,
@@ -199,8 +199,8 @@ export async function runRace(race: Race) {
 
   const allowed = await allowedModels()
   const built = Date.now()
-  const { base, check } = await buildBase(`derby-r${race.id}-base`, race.task, seed)
-  event('base_built', { text: `${race.task} ${base.id} ${Date.now() - built} ms` })
+  const { base, check } = await buildBase(`derby-r${race.id}-base`, race.task, seed, race.level)
+  event('base_built', { text: `${race.task} level ${race.level} ${base.id} ${Date.now() - built} ms` })
   // The room is ready before the countdown ends. The entries close at the countdown, so the lanes are read after it.
   await sleep(Math.max(0, Date.parse(race.countdown_ends_at!) - Date.now()))
   const lanes = await lanesOf(race.id)
@@ -365,7 +365,9 @@ async function tick() {
     for (const room of missing) {
       if (!commonPrefixes?.includes(`rooms/${room}/`)) continue
       // The first player sets the countdown, so this first value has no effect.
-      await must(db.rpc('open_race', { p_task: room, p_countdown_ends_at: new Date().toISOString() }))
+      // Each level comes as often as the others. The level stays hidden: only the blurb of the level shows.
+      const level = 1 + Math.floor(Math.random() * 3)
+      await must(db.rpc('open_race', { p_task: room, p_countdown_ends_at: new Date().toISOString(), p_level: level }))
     }
   }
   // Only a ready race starts: the database sets ready at the first bet, the first model entry or an admin start.

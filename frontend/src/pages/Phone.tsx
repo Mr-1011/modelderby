@@ -1,4 +1,4 @@
-import { finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@modelderby/shared'
+import { blurbOf, finishOrder, type Horse as HorseRow, placeOdds, type Stakes, winPayout } from '@modelderby/shared'
 import { type ReactNode, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Glyph from '../components/Glyph'
@@ -8,7 +8,7 @@ import Track, { grass, Rail } from '../components/Track'
 import { useDemoRace } from '../lib/demo'
 import { oats, odds, usd } from '../lib/format'
 import { useModels } from '../lib/queries'
-import { BLURBS, progressOf, type RaceView, ROOMS, stateOf, statusOf, TAG_ICONS, TAGS } from '../lib/race'
+import { progressOf, type RaceView, ROOMS, stateOf, statusOf, TAG_ICONS, TAGS } from '../lib/race'
 import { colorOf } from '../lib/sprite'
 
 type Market = 'win' | 'place'
@@ -149,7 +149,7 @@ export function PhoneView({
         </div>
         <div className="min-w-0">
           <h1 className="truncate font-pixel text-[30px] leading-none lg:text-[45px]">{ROOMS[race.task] ?? race.task}</h1>
-          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{BLURBS[race.task]}</p>
+          <p className="mt-2 max-w-[52ch] text-balance text-[13px] leading-5 text-muted lg:text-[15px]">{blurbOf(race.task, race.level)}</p>
           {/* The rule of the race, then the tools of a horse outside the shell. */}
           <ul className="mt-3 flex flex-wrap gap-2 text-[12px] leading-5">
             <RuleTag />

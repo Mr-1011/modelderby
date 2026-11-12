@@ -30,13 +30,14 @@ const network = (room: string) => ({
 // The checker is /room/check.sh. A room whose checker holds data that a horse must not see writes the real one
 // as runner-check.sh next to setup.py: that file goes only to the runner, and /room/check.sh is a public version.
 // Each room becomes a git repository, so the final diff of a horse works for every room.
-export async function buildBase(name: string, room: string, seed: string) {
+// The level (1 easy to 3 hard) sets the size of the job, see shared/src/rooms.ts.
+export async function buildBase(name: string, room: string, seed: string, level = 1) {
   const d = await disk()
   const text = async (file: string) => new TextDecoder().decode(await d.getObject(`rooms/${room}/${file}`))
   const base = await archil.createSandbox({ name, baseImage: 'python:3.13', vcpuCount: 1, memSizeMiB: 2048, network: network(room) })
   const setup = await base.exec(
     'mkdir -p /opt/room-src && cd /opt/room-src && printf %s "$SETUP" > setup.py && printf %s "$CHECK" > check.sh' +
-      ` && python3 setup.py --seed ${seed} >&2 && (cat runner-check.sh 2>/dev/null || cat /room/check.sh)` +
+      ` && python3 setup.py --seed ${seed} --level ${level} >&2 && (cat runner-check.sh 2>/dev/null || cat /room/check.sh)` +
       ' && cd /room && rm -rf /opt/room-src && { [ -d .git ] || { git init -q && git add -A &&' +
       ' git -c user.name=room -c user.email=room@example.com commit -qm room; }; } >&2',
     { env: { SETUP: await text('setup.py'), CHECK: await text('check.sh') }, timeoutSeconds: 120 },
@@ -88,18 +89,25 @@ if (import.meta.main) {
   }
   console.log(`pushed pool/${room} to the disk ${d.name}`)
 
-  // The gate: the progress of a fresh room is below 100, and the reference solution brings it to 100.
+  // The gate, for each level: the progress of a fresh room is below 100, and the reference solution brings it to 100.
   // These names do not start with "derby-r", so a runner that starts at the same time leaves them alone.
-  const { base, check } = await buildBase(`derby-gate-${room}-base`, room, 'test')
-  const fork = await base.fork({ name: `derby-gate-${room}-fork` })
-  const fresh = await runCheck(fork, check)
-  const solve = await fork.exec('python3 -c "$SOLVE"', {
-    env: { SOLVE: new TextDecoder().decode(await d.getObject(`rooms/${room}/solve.py`)) },
-    timeoutSeconds: 120,
-  })
-  const solved = await runCheck(fork, check)
-  console.log('fresh room:', fresh, 'after solve.py:', solved, solve.exitCode === 0 ? '' : solve.stderr)
-  if (fresh.progress >= 100 || solved.progress !== 100) process.exitCode = 1
-  await remove(fork)
-  await remove(base)
+  const solveText = new TextDecoder().decode(await d.getObject(`rooms/${room}/solve.py`))
+  await Promise.all(
+    [1, 2, 3].map(async (level) => {
+      const { base, check } = await buildBase(`derby-gate-${room}-${level}-base`, room, 'test', level)
+      const fork = await base.fork({ name: `derby-gate-${room}-${level}-fork` })
+      const fresh = await runCheck(fork, check)
+      const solve = await fork.exec('python3 -c "$SOLVE"', { env: { SOLVE: solveText }, timeoutSeconds: 120 })
+      const solved = await runCheck(fork, check)
+      console.log(`level ${level}: fresh room:`, fresh, 'after solve.py:', solved, solve.exitCode === 0 ? '' : solve.stderr)
+      if (fresh.progress >= 100 || solved.progress !== 100) process.exitCode = 1
+      await remove(fork)
+      await remove(base)
+    }).map((gate, i) =>
+      gate.catch((error) => {
+        console.error(`level ${i + 1}:`, error)
+        process.exitCode = 1
+      }),
+    ),
+  )
 }

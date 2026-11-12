@@ -1,8 +1,9 @@
+import { blurbOf } from '@modelderby/shared'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { oats, odds } from '../lib/format'
 import type { RaceSummary } from '../lib/queries'
-import { BLURBS, ROOMS, statusOf } from '../lib/race'
+import { ROOMS, statusOf } from '../lib/race'
 import Glyph from './Glyph'
 
 // The place of a race card while the list loads. It has the height of a card, so the page does not move.
@@ -43,7 +44,7 @@ export default function RaceCard({ summary, now, children }: { summary: RaceSumm
             </p>
           </div>
           {/* The line is never cut. It has room for 3 lines, and for 2 lines on a wide card. */}
-          <p className="mt-2 min-h-[60px] text-[13px] leading-5 text-muted xl:min-h-10">{BLURBS[race.task]}</p>
+          <p className="mt-2 min-h-[60px] text-[13px] leading-5 text-muted xl:min-h-10">{blurbOf(race.task, race.level)}</p>
           {/* Each horse has odds from the house seed, so a race with no bet of a player shows its favorite, not an empty pool. */}
           <div className="mt-4 border-y-2 border-line py-3">
             <p className="text-[12px] text-muted">{settled ? 'Winner' : 'Favorite'}</p>

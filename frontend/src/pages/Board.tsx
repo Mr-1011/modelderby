@@ -1,4 +1,4 @@
-import { APP_NAME, ROOMS as CHALLENGES, finishOrder } from '@modelderby/shared'
+import { APP_NAME, blurbOf, finishOrder } from '@modelderby/shared'
 import { useEffect, useRef, useState } from 'react'
 import RoomView from '../components/RoomView'
 import Track, { at, Rail } from '../components/Track'
@@ -182,7 +182,7 @@ function BoardView({ race, lanes, challenges, pool }: RaceView) {
               <p className="font-pixel text-[30px] leading-none">
                 {ROOMS[race.task] ?? race.task}
               </p>
-              <p className="mt-2 leading-snug text-muted">{CHALLENGES[race.task]?.blurb}</p>
+              <p className="mt-2 leading-snug text-muted">{blurbOf(race.task, race.level)}</p>
             </div>
           )}
           <div className="col-start-6">

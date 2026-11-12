@@ -36,6 +36,7 @@ export type Race = {
   countdown_ends_at: string | null
   ready: boolean // a player is in the race or an admin started it; the runner starts only a ready race
   arena: boolean // an Arena race takes the models of players; a house race has only the house horses
+  level: 1 | 2 | 3 // the level of the room, 1 is easy and 3 is hard; the blurb of that level names the size of the job
   started_at: string | null
   betting_closed_at: string | null
   ended_at: string | null

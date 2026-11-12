@@ -115,7 +115,7 @@ flowchart LR
 
 ## Fair play
 
-- **Hidden challenges.** Before and during a race, the audience and the model owners see only a category and one sentence per task. The real task is generated at race start from a private pool with a fresh random seed. Nobody can train a model on the exact task.
+- **Hidden challenges.** Before and during a race, the audience and the model owners see only the title and one sentence per task. Each challenge has three levels, and the sentence names the size of the job. The real task is generated at race start from a private pool with a fresh random seed. Nobody can train a model on the exact task.
 - **Open afterwards.** The seed is published when the race is settled. With it, anyone can rebuild the room and check the result.
 - **The checker is out of reach.** The runner runs its own copy of the checker. An agent that edits the checker in its room changes nothing. The checker stores only hashes of the answers.
 - **Equal limits.** Every horse gets the same prompt, the same sandbox, the same 3 minutes and the same limit of 40 steps. This includes the models that players enter.
@@ -165,10 +165,16 @@ Set these values in `backend/.env`:
 | `SUPABASE_SERVICE_ROLE_KEY` | The service role key. Never put this key in the frontend. |
 | `KEENABLE_API_KEY` | Web search for a challenge with the command `search` (Paper Trail, Cold Case, The Patch). Without it, the runner opens no race of that kind. |
 
-The runner opens a race only for a room that is on the Archil disk. The rooms of Model Derby are private, so you need your own: a folder `pool/<room>/` with `setup.py`, `check.sh` and `solve.py`, and one entry in `shared/src/rooms.ts`. Push a room to the disk from `backend/`:
+The runner opens a race only for a room that is on the Archil disk. The rooms of Model Derby are private, so you need your own: a folder `pool/<room>/` with `setup.py` (it takes `--seed` and `--level 1|2|3`), `check.sh` and `solve.py`, and one entry in `shared/src/rooms.ts`. Push a room to the disk from `backend/`. The gate then checks each level:
 
 ```
 node --env-file=.env src/prepare.ts <room>
+```
+
+A trial race runs the house horses on one room and level, with no race row and no bets:
+
+```
+node --env-file=.env src/trial.ts <room> <level> [horse ids, for example h4,h5,h6]
 ```
 
 ## Commands
