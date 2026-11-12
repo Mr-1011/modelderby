@@ -22,9 +22,9 @@ export const ROOMS: Record<string, Room> = {
     title: 'The Cube',
     category: 'puzzle',
     blurbs: [
-      "A scrambled Rubik's cube. The models solve it with a command line tool.",
-      "A scrambled Rubik's cube. The models solve it with a command line tool.",
-      "A scrambled Rubik's cube. The models solve it with a command line tool.",
+      "A Rubik's cube, 6 turns from solved. The models solve it with a command line tool.",
+      "A Rubik's cube, 8 turns from solved. The models solve it with a command line tool.",
+      "A Rubik's cube, 10 turns from solved. The models solve it with a command line tool.",
     ],
   },
   papertrail: {
@@ -32,8 +32,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'research',
     blurbs: [
       'The models search the web: 4 chained questions, then one final number.',
-      'The models search the web: 4 chained questions, then one final number.',
-      'The models search the web: 4 chained questions, then one final number.',
+      'The models search the web: 2 chains, 8 chained questions, then 2 final numbers.',
+      'The models search the web: 3 chains, 12 chained questions, then 3 final numbers.',
     ],
     search: true,
   },
@@ -42,8 +42,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'reverse',
     blurbs: [
       'A program with no source. Five layers. One password.',
-      'A program with no source. Five layers. One password.',
-      'A program with no source. Five layers. One password.',
+      'A program with no source. Seven layers. One password.',
+      'A program with no source. Nine layers of hidden maths. One password.',
     ],
   },
   rover: {
@@ -51,8 +51,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'robotics',
     blurbs: [
       'A rover in a warehouse. It must deliver one package before the battery is empty.',
-      'A rover in a warehouse. It must deliver one package before the battery is empty.',
-      'A rover in a warehouse. It must deliver one package before the battery is empty.',
+      'A rover in a warehouse. It must deliver 3 packages to their docks on a tight battery.',
+      'A rover in a warehouse. 5 packages, 2 at a time, and a battery with almost no spare.',
     ],
   },
   bughunt: {
@@ -60,8 +60,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'code',
     blurbs: [
       'Five bugs. No hints. The tests are hidden.',
-      'Five bugs. No hints. The tests are hidden.',
-      'Five bugs. No hints. The tests are hidden.',
+      'Ten bugs in ten files. No hints. The tests are hidden.',
+      'Twenty bugs in fifteen files. No hints. The tests are hidden.',
     ],
   },
   vault: {
@@ -69,8 +69,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'escape',
     blurbs: [
       'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.',
-      'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.',
-      'An escape room with 5 locks: server logs, a cipher, a bug, a grid puzzle and a map.',
+      'An escape room with 5 locks: 12,000 log lines, a 24-byte cipher, 7 rules, an 80x80 map.',
+      'An escape room with 5 locks: 30,000 log lines, a 40-byte cipher, 9 rules, a 120x120 map.',
     ],
   },
   slowlane: {
@@ -78,8 +78,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'code',
     blurbs: [
       'It works. It is slow. Make it ten times faster.',
-      'It works. It is slow. Make it ten times faster.',
-      'It works. It is slow. Make it ten times faster.',
+      'It works. It is slow. Make it 25 times faster.',
+      'It works. It is slow. Make it a hundred times faster.',
     ],
   },
   coldcase: {
@@ -87,8 +87,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'research',
     blurbs: [
       'Thirty log entries. Five are forged. Find them.',
-      'Thirty log entries. Five are forged. Find them.',
-      'Thirty log entries. Five are forged. Find them.',
+      'Forty-eight log entries. Eight are forged. Find them.',
+      'Seventy-two log entries. Twelve are forged. Find them.',
     ],
     search: true,
   },
@@ -97,8 +97,8 @@ export const ROOMS: Record<string, Room> = {
     category: 'code',
     blurbs: [
       'The library changed. The code did not. Make the tests pass.',
-      'The library changed. The code did not. Make the tests pass.',
-      'The library changed. The code did not. Make the tests pass.',
+      'The library changed in ten places. The code did not. Make the tests pass.',
+      'The library changed in fifteen places. The code did not. Make the tests pass.',
     ],
     search: true,
   },
