@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { oats } from '../lib/format'
 import { signOut, usePlayer, useSession } from '../lib/queries'
 import { riderOf } from '../lib/rider'
+import Footer from './Footer'
 import Rider from './Rider'
 import SignInLink from './SignInLink'
 import { grass } from './Track'
@@ -13,12 +14,6 @@ const TAB =
 
 // The header with the account and the main pages, the same on each page. Only the board has its own header.
 const ITEM = 'block h-12 w-full px-4 text-left font-pixel text-[30px] leading-[48px] hover:bg-accent hover:text-on-accent'
-
-const LINKS = [
-  ['/privacy', 'Privacy'],
-  ['/terms', 'Terms'],
-  ['/support', 'Support'],
-]
 
 export default function Shell() {
   const session = useSession()
@@ -93,17 +88,7 @@ export default function Shell() {
         <Outlet />
       </div>
       {/* Only the profile has the footer. It stays at the bottom of the screen, above the nav bar of a phone. */}
-      {pathname === '/profile' && (
-        <footer className="border-t-2 border-line">
-          <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-4">
-            {LINKS.map(([to, label]) => (
-              <Link key={to} to={to} className="font-pixel text-[22.5px] leading-none text-muted hover:text-accent">
-                {label}
-              </Link>
-            ))}
-          </div>
-        </footer>
-      )}
+      {pathname === '/profile' && <Footer />}
     </div>
   )
 }
