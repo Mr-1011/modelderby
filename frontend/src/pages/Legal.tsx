@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 // The privacy policy and the terms. Google needs a link to both before the Google sign-in is open to everyone.
-const UPDATED = 'November 11, 2026'
+const UPDATED = 'November 12, 2026'
 
 function Doc({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -55,12 +55,13 @@ export function Privacy() {
         <li>To write to you about {APP_NAME}, for example about new challenges. You can ask us to stop at any time.</li>
       </ul>
       <p>
-        We do not sell your data, we show no ads, and we use no tracking or analytics tools. The use of information that {APP_NAME} gets
+        We do not sell your data and we show no ads. Vercel Web Analytics counts the page views, with no cookies and no data that names
+        you. The use of information that {APP_NAME} gets
         from Google APIs follows the Google API Services User Data Policy, including the Limited Use requirements.
       </p>
       <h2>Who processes it</h2>
       <p>
-        Supabase keeps the database and the sign-in, Vercel hosts the website, and Railway runs the races. The AI models get the challenge
+        Supabase keeps the database and the sign-in, Vercel hosts the website and counts the page views, and Railway runs the races. The AI models get the challenge
         only, never data about a player. Your session stays in the storage of your browser until you log out.
       </p>
       <h2>Changes</h2>

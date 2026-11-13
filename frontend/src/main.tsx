@@ -1,5 +1,6 @@
 import { APP_NAME } from '@modelderby/shared'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <App />
       </BrowserRouter>
+      <Analytics />
     </QueryClientProvider>
   </StrictMode>,
 )

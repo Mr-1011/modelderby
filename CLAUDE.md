@@ -69,7 +69,7 @@ npx -y @railway/cli up --ci --service runner --environment production --project 
 npx -y @railway/cli logs --service runner --lines 100
 ```
 
-The frontend is live at https://www.modelderby.com (`modelderby.com` redirects to it, and https://horserace-snowy.vercel.app also works). The Vercel project is `modelderby` in the team `fluid-labs`, with root directory `frontend`. Its variables are `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_GOOGLE_CLIENT_ID`. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
+The frontend is live at https://www.modelderby.com (`modelderby.com` redirects to it, and https://horserace-snowy.vercel.app also works). The Vercel project is `modelderby` in the team `fluid-labs`, with root directory `frontend`. Its variables are `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_GOOGLE_CLIENT_ID`. Vercel Web Analytics is on for the project (`<Analytics />` in `src/main.tsx`, $0.03 per 1,000 page views on the Pro plan), and the privacy page says so. It has no Git connection yet, so a push does not deploy. Deploy from the repo root:
 
 ```
 pnpm dlx vercel deploy --prod --scope fluid-labs
