@@ -365,8 +365,10 @@ async function tick() {
     for (const room of missing) {
       if (!commonPrefixes?.includes(`rooms/${room}/`)) continue
       // The first player sets the countdown, so this first value has no effect.
-      // Each level comes as often as the others. The level stays hidden: only the blurb of the level shows.
-      const level = 1 + Math.floor(Math.random() * 3)
+      // 10% level 1, 30% level 2, 60% level 3: at level 1 the cheapest model wins almost every race, so it is rare.
+      // The level stays hidden: only the blurb of the level shows.
+      const pick = Math.random()
+      const level = pick < 0.1 ? 1 : pick < 0.4 ? 2 : 3
       await must(db.rpc('open_race', { p_task: room, p_countdown_ends_at: new Date().toISOString(), p_level: level }))
     }
   }
